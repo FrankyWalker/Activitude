@@ -1,8 +1,32 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 
-const Terminal = ({ output }) => {
+const Terminal = ({ output: providedOutput }) => {
     const [activeTab, setActiveTab] = useState("output");
+    const [commandHistory, setCommandHistory] = useState([]);
+    const [userInput, setUserInput] = useState("");
+
+    const commandOutputs = {
+        ls: "src\npackage.json\nnode_modules\nREADME.md",
+        "cargo clippy": "Checking your-project v0.1.0 (/path/to/your/project)\nDone.",
+        "cargo run": "Running `target/debug/your_project`\nHello, World!",
+    };
+
+    const handleCommand = (command) => {
+        if (command.trim() === "") return;
+
+        // Check if the command exists in simulated outputs
+        const simulatedOutput =
+            commandOutputs[command] || `Command not found: ${command}`;
+
+        setCommandHistory((prev) => [
+            ...prev,
+            { command, output: simulatedOutput },
+        ]);
+
+
+        setUserInput("");
+    };
 
     const parseOutput = (outputText) => {
         const lines = outputText.split("\n");
@@ -26,17 +50,12 @@ const Terminal = ({ output }) => {
         <Container>
             <TabBar>
                 <Tab
-                    active={activeTab === "bash"}
-                    onClick={() => setActiveTab("bash")}
+                    active={activeTab === "terminal"}
+                    onClick={() => setActiveTab("terminal")}
                 >
-                    BASH
+                    TERMINAL
                 </Tab>
-                <Tab
-                    active={activeTab === "assistant"}
-                    onClick={() => setActiveTab("assistant")}
-                >
-                    AI ASSISTANT
-                </Tab>
+
                 <Tab
                     active={activeTab === "output"}
                     onClick={() => setActiveTab("output")}
@@ -46,23 +65,35 @@ const Terminal = ({ output }) => {
             </TabBar>
 
             <Section>
-                {activeTab === "bash" && (
+                {activeTab === "terminal" && (
                     <BashContent>
                         <Prompt>$ </Prompt>
-                        <InputField placeholder="Enter command..." />
+                        <InputField
+                            value={userInput}
+                            onChange={(e) => setUserInput(e.target.value)}
+                            onKeyPress={(e) => {
+                                if (e.key === "Enter") {
+                                    handleCommand(userInput);
+                                }
+                            }}
+                            placeholder="Enter command..."
+                        />
                     </BashContent>
                 )}
 
-                {activeTab === "assistant" && (
-                    <AssistantContent>
-                        <AssistantMessage>
-                            How can I help you with your code today?
-                        </AssistantMessage>
-                    </AssistantContent>
-                )}
-
                 {activeTab === "output" && (
-                    <OutputArea>{parseOutput(output || "No output to display.")}</OutputArea>
+                    <OutputArea>
+                        {providedOutput
+                            ? parseOutput(providedOutput)
+                            : commandHistory.map((entry, index) => (
+                                <div key={index}>
+                                    <CommandLine>
+                                        $ {entry.command}
+                                    </CommandLine>
+                                    {parseOutput(entry.output)}
+                                </div>
+                            ))}
+                    </OutputArea>
                 )}
             </Section>
         </Container>
@@ -80,7 +111,7 @@ const Container = styled.div`
     border: 1px solid #1e2a38;
     position: relative;
     flex-direction: column;
-    background-color: #121212;
+    background-color: #000000;
 `;
 
 const TabBar = styled.div`
@@ -96,20 +127,21 @@ const Tab = styled.div`
     font-size: 0.9rem;
     font-weight: 600;
     letter-spacing: 0.5px;
-    color: ${props => props.active ? '#bb86fc' : '#aaa'};
-    background-color: ${props => props.active ? '#1e1e1e' : 'transparent'};
-    border-bottom: ${props => props.active ? '2px solid #bb86fc' : 'none'};
+    color: ${(props) => (props.active ? "#ffffff" : "#aaa")}; /* Updated */
+    background-color: ${(props) => (props.active ? "#1e1e1e" : "transparent")};
+    border-bottom: ${(props) =>
+            props.active ? "2px solid #ffffff" /* Updated */ : "none"};
     transition: all 0.2s ease;
 
     &:hover {
-        color: ${props => props.active ? '#bb86fc' : 'white'};
+        color: ${(props) => (props.active ? "#ffffff" : "white")}; /* Updated */
         background-color: #222;
     }
 `;
 
 const Section = styled.div`
     flex: 1;
-    background-color: #121212;
+    background-color: #000000;
     color: white;
     display: flex;
     flex-direction: column;
@@ -136,7 +168,7 @@ const BashContent = styled.div`
 `;
 
 const Prompt = styled.span`
-    color: #bb86fc;
+    color: #ffffff; /* Updated */
     font-family: 'SF Mono', 'Roboto Mono', monospace;
     font-size: 1rem;
     font-weight: bold;
@@ -157,47 +189,36 @@ const InputField = styled.input`
     }
 `;
 
-const AssistantContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  padding: 10px 0;
-`;
-
-const AssistantMessage = styled.div`
-  background-color: #1e1e1e;
-  border-left: 3px solid #bb86fc;
-  padding: 15px;
-  border-radius: 0 4px 4px 0;
-  margin-bottom: 15px;
-  color: #e0e0e0;
-  font-family: 'SF Pro', 'Segoe UI', sans-serif;
-  line-height: 1.6;
-`;
-
 const NormalLine = styled.div`
-  color: #e0e0e0;
-  line-height: 1.5;
+    color: #e0e0e0;
+    line-height: 1.5;
 `;
 
 const ErrorLine = styled.div`
-  color: #cf6679;
-  font-weight: bold;
-  line-height: 1.5;
+    color: #cf6679;
+    font-weight: bold;
+    line-height: 1.5;
 `;
 
 const FileLine = styled.div`
-  color: #ffb74d;
-  font-style: italic;
-  line-height: 1.5;
+    color: #ffb74d;
+    font-style: italic;
+    line-height: 1.5;
 `;
 
 const CodeLine = styled.div`
-  color: #82aaff;
-  line-height: 1.5;
+    color: #82aaff;
+    line-height: 1.5;
 `;
 
 const HelpLine = styled.div`
-  color: #03dac6;
-  font-style: italic;
-  line-height: 1.5;
+    color: #03dac6;
+    font-style: italic;
+    line-height: 1.5;
+`;
+
+const CommandLine = styled.div`
+    color: #ffffff; /* Updated */
+    font-weight: bold;
+    line-height: 1.5;
 `;

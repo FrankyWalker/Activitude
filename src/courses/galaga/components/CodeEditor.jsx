@@ -8,6 +8,7 @@ import StopIcon from "@mui/icons-material/Stop";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import ReplayIcon from "@mui/icons-material/Replay";
 import FileCodeIcon from "@mui/icons-material/InsertDriveFile";
+import FolderIcon from "@mui/icons-material/Folder";
 import ReactDOM from "react-dom";
 
 const CodeEditor = ({ onRun }) => {
@@ -35,7 +36,7 @@ const CodeEditor = ({ onRun }) => {
             content: tooltipContent,
             pos: {
                 x: left + width / 2 + window.scrollX,
-                y: top - 35 + window.scrollY,
+                y: top - 40 + window.scrollY,
             },
         });
     };
@@ -51,7 +52,7 @@ const CodeEditor = ({ onRun }) => {
             return;
         }
 
-        if (onRun) onRun(files["main.rs"]);
+        if (onRun) onRun(files["main.rs"], files["Cargo.toml"]);
         setIsPlaying(true);
 
         setShowFeedback(true);
@@ -59,11 +60,11 @@ const CodeEditor = ({ onRun }) => {
 
         const id = setTimeout(() => {
             setIsPlaying(false);
-            setFeedbackMessage("Code executed successfully!");
+            setFeedbackMessage(`Code executed successfully!\n\nMain.rs:\n${files["main.rs"]}\n\nCargo.toml:\n${files["Cargo.toml"]}`);
 
             setTimeout(() => {
                 setShowFeedback(false);
-            }, 2000);
+            }, 4000);
         }, 1500);
 
         setTimeoutId(id);
@@ -100,6 +101,9 @@ const CodeEditor = ({ onRun }) => {
     return (
         <EditorContainer>
             <FileTabs>
+                <StaticFolderContainer>
+                    <FolderIcon style={{ fontSize: '24px', opacity: 0.7 }} />
+                </StaticFolderContainer>
                 {Object.keys(files).map((filename) => (
                     <FileTab
                         key={filename}
@@ -107,7 +111,7 @@ const CodeEditor = ({ onRun }) => {
                         onClick={() => handleTabClick(filename)}
                     >
                         <FileIconWrapper>
-                            <FileCodeIcon style={{ fontSize: '14px' }} />
+                            <FileCodeIcon style={{ fontSize: '20px' }} />
                         </FileIconWrapper>
                         <span>{filename}</span>
                     </FileTab>
@@ -138,34 +142,25 @@ const CodeEditor = ({ onRun }) => {
                         onClick={handleRunClick}
                         disabled={activeFile !== "main.rs"}
                     >
-                        {isPlaying ? (
-                            <>
-                                <StopIcon /> Stop
-                            </>
-                        ) : (
-                            <>
-                                <PlayArrowIcon /> Run
-                            </>
-                        )}
+                        {isPlaying ? <StopIcon /> : <PlayArrowIcon />}
                     </RunButton>
 
-                    <ActionButton
+                    <SecondaryButton
                         onMouseEnter={(e) => handleMouseEnter(e, "Copy code")}
                         onMouseLeave={handleMouseLeave}
                         onClick={handleCopyClick}
                     >
-                        <ContentCopyIcon fontSize="small" /> Copy
-                    </ActionButton>
+                        <ContentCopyIcon />
+                    </SecondaryButton>
 
-                    <ActionButton
+                    <SecondaryButton
                         onMouseEnter={(e) => handleMouseEnter(e, "Reset code")}
                         onMouseLeave={handleMouseLeave}
                         onClick={handleResetClick}
                     >
-                        <ReplayIcon fontSize="small" /> Reset
-                    </ActionButton>
+                        <ReplayIcon />
+                    </SecondaryButton>
                 </ButtonGroup>
-
             </ControlPanel>
 
             {showFeedback && (
@@ -187,15 +182,15 @@ const CodeEditor = ({ onRun }) => {
 
 export default CodeEditor;
 
-/* Styled Components with enhanced styling */
+// Styled Components
 const EditorContainer = styled.div`
     display: flex;
     flex-direction: column;
     width: 100%;
     height: 100%;
-    border-radius: 10px;
+    border-radius: 0;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.3);
     background-color: #1e1e2e;
     color: white;
 `;
@@ -206,9 +201,10 @@ const FileTabs = styled.div`
     padding: 0;
     overflow-x: auto;
     scrollbar-width: thin;
+    align-items: center;
 
     &::-webkit-scrollbar {
-        height: 4px;
+        height: 6px;
     }
 
     &::-webkit-scrollbar-thumb {
@@ -217,26 +213,37 @@ const FileTabs = styled.div`
     }
 `;
 
+const StaticFolderContainer = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #252535;
+    color: #aaa;
+    border-right: 1px solid #303042;
+    width: 40px;
+    height: 40px;
+`;
+
 const FileIconWrapper = styled.span`
     display: inline-flex;
-    margin-right: 6px;
-    opacity: 0.7;
+    margin-right: 8px;
+    opacity: 0.8;
 `;
 
 const FileTab = styled.div`
-    padding: 10px 16px;
+    padding: 12px 18px;
     background-color: ${(props) => (props.active ? "#1e1e2e" : "transparent")};
     color: ${(props) => (props.active ? "#f8f8f2" : "#aaa")};
-    border-bottom: 2px solid ${(props) => (props.active ? "#6366f1" : "transparent")};
+    border-bottom: 3px solid ${(props) => (props.active ? "#6366f1" : "transparent")};
     cursor: pointer;
-    font-size: 14px;
+    font-size: 16px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     transition: background-color 0.2s, color 0.2s;
     display: flex;
     align-items: center;
     user-select: none;
     white-space: nowrap;
-    
+
     &:hover {
         background-color: ${(props) => (props.active ? "#1e1e2e" : "#2a2a3f")};
         color: ${(props) => (props.active ? "#f8f8f2" : "#eee")};
@@ -249,39 +256,12 @@ const EditorContent = styled.div`
     background-color: #1e1e2e;
     overflow: hidden;
     position: relative;
-    
+
     .cm-editor {
         font-family: 'JetBrains Mono', 'Fira Code', monospace;
-        font-size: 14px;
+        font-size: 16px;
         width: 100%;
         height: 100%;
-    }
-    
-    .cm-scroller {
-        overflow: auto !important;
-    }
-    
-    .cm-gutters {
-        background-color: #282836;
-    }
-    
-    /* Custom scrollbar styles */
-    .cm-scroller::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-    }
-    
-    .cm-scroller::-webkit-scrollbar-track {
-        background: #1e1e2e;
-    }
-    
-    .cm-scroller::-webkit-scrollbar-thumb {
-        background-color: #4d4d69;
-        border-radius: 4px;
-    }
-    
-    .cm-scroller::-webkit-scrollbar-thumb:hover {
-        background-color: #6366f1;
     }
 `;
 
@@ -289,7 +269,7 @@ const ControlPanel = styled.div`
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 20px;
+    padding: 15px 25px;
     background-color: #252535;
     border-top: 1px solid #303042;
     width: 100%;
@@ -297,13 +277,7 @@ const ControlPanel = styled.div`
 
 const ButtonGroup = styled.div`
     display: flex;
-    gap: 10px;
-`;
-
-const ActionPrompt = styled.div`
-    font-size: 14px;
-    color: #aaa;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    gap: 15px;
 `;
 
 const RunButton = styled.button`
@@ -313,20 +287,18 @@ const RunButton = styled.button`
     }};
     color: white;
     border: none;
-    border-radius: 6px;
-    padding: 10px 16px;
-    font-weight: 500;
-    font-size: 14px;
+    border-radius: 8px;
+    padding: 12px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
     cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
     transition: background-color 0.2s, transform 0.1s;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 
     &:hover:not(:disabled) {
         background-color: ${(props) => (props.playing ? "#e11d48" : "#4f46e5")};
-        transform: translateY(-1px);
+        transform: translateY(-2px);
     }
 
     &:active:not(:disabled) {
@@ -334,28 +306,26 @@ const RunButton = styled.button`
     }
 
     svg {
-        font-size: 18px;
+        font-size: 24px;
     }
 `;
 
-const ActionButton = styled.button`
-    background-color: #303045;
-    color: #ddd;
+const SecondaryButton = styled.button`
+    background-color: transparent;
+    color: #aaa;
     border: none;
-    border-radius: 6px;
-    padding: 10px 16px;
-    font-size: 14px;
-    font-weight: 500;
+    border-radius: 8px;
+    padding: 12px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
     cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    transition: background-color 0.2s, color 0.2s, transform 0.1s;
 
     &:hover {
-        background-color: #3b3b54;
-        transform: translateY(-1px);
+        background-color: rgba(255,255,255,0.1);
+        color: #f8f8f2;
+        transform: translateY(-2px);
     }
 
     &:active {
@@ -363,7 +333,7 @@ const ActionButton = styled.button`
     }
 
     svg {
-        font-size: 16px;
+        font-size: 24px;
     }
 `;
 
@@ -371,23 +341,23 @@ const Tooltip = styled.div`
     position: absolute;
     background: #3b3b4f;
     color: white;
-    padding: 6px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    max-width: 200px;
+    padding: 8px 12px;
+    border-radius: 0;
+    font-size: 14px;
+    max-width: 250px;
     text-align: center;
     z-index: 1000;
     pointer-events: none;
     transform: translateX(-50%);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 
     &:after {
         content: '';
         position: absolute;
         top: 100%;
         left: 50%;
-        margin-left: -5px;
-        border-width: 5px;
+        margin-left: -6px;
+        border-width: 6px;
         border-style: solid;
         border-color: #3b3b4f transparent transparent transparent;
     }
@@ -395,15 +365,15 @@ const Tooltip = styled.div`
 
 const FeedbackToast = styled.div`
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: 25px;
+    right: 25px;
     background-color: #6366f1;
     color: white;
-    padding: 10px 16px;
-    border-radius: 6px;
-    font-size: 14px;
+    padding: 12px 20px;
+    border-radius: 0;
+    font-size: 16px;
     font-weight: 500;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4);
     animation: slideIn 0.3s ease-out forwards;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     z-index: 100;

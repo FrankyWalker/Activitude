@@ -11,9 +11,8 @@ const LoginPage = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
-    // Redirect if user is authenticated
     useEffect(() => {
-        if (user) navigate("/home"); // Redirect to home or dashboard
+        if (user) navigate("/home");
     }, [user, navigate]);
 
     const handleGoogleSignIn = () => {
@@ -39,7 +38,7 @@ const LoginPage = () => {
                 boxSizing: "border-box",
             }}
         >
-            {/* Back Button */}
+
             <button
                 onClick={() => navigate("/")}
                 style={{
@@ -144,7 +143,7 @@ const LoginPage = () => {
                         fontSize: "16px",
                         boxSizing: "border-box",
                         opacity: loading ? 0.7 : 1,
-                        marginBottom: "15px", // Added gap between buttons
+                        marginBottom: "15px",
                     }}
                     onMouseEnter={(e) => {
                         e.target.style.backgroundColor = "#f0f0f0";
@@ -160,7 +159,6 @@ const LoginPage = () => {
                     {loading ? "Signing in..." : "Log In with Email"}
                 </button>
 
-                {/* Google Sign-In */}
                 <button
                     onClick={handleGoogleSignIn}
                     disabled={loading}
@@ -205,7 +203,6 @@ const LoginPage = () => {
                     {loading ? "Signing in..." : "Log In with Google"}
                 </button>
 
-                {/* Sign Up Text */}
                 <div style={{ marginTop: "20px" }}>
                     <p style={{ color: "white", fontSize: "14px" }}>
                         Don't have an account?{" "}

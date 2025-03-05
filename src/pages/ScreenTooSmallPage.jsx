@@ -1,50 +1,48 @@
 import React, { useState, useEffect } from "react";
 
 const ScreenTooSmallPage = () => {
-    const [displayedText, setDisplayedText] = useState(""); // State for the text being displayed
-    const message = "Your screen width is too small, please use your laptop 😢"; // The message to type out
+    const [displayedText, setDisplayedText] = useState("");
+    const message = "Your screen width is too small, please use your laptop 😢";
 
     useEffect(() => {
-        let currentIndex = 0; // Tracks the current character to type
+        let currentIndex = 0;
 
         const typeCharacter = () => {
             if (currentIndex < message.length) {
-                // Add the next character to the displayed text only if valid
-                setDisplayedText((prevText) => prevText + (message[currentIndex] || ""));
-                currentIndex++; // Move to the next character
 
-                // Schedule the next character typing
+                setDisplayedText((prevText) => prevText + (message[currentIndex] || ""));
+                currentIndex++;
+
                 setTimeout(typeCharacter, 100);
             }
         };
 
-        // Start typing effect
         typeCharacter();
 
         return () => {
-            // Cleanup to stop typing if the component unmounts
+
             currentIndex = message.length;
         };
-    }, []); // Empty dependency array to run effect only once on mount
+    }, []);
 
     return (
         <div
             style={{
                 height: "100vh",
                 width: "100vw",
-                background: "black", // Solid black background
-                color: "white", // White text for contrast
+                background: "black",
+                color: "white",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "center",
                 alignItems: "center",
-                fontFamily: "monospace", // Monospace font for ASCII art
+                fontFamily: "monospace",
                 paddingLeft: "20px",
                 paddingRight: "20px",
                 boxSizing: "border-box",
             }}
         >
-            {/* ASCII Art */}
+
             <div
                 style={{
                     border: "1px solid white",
@@ -52,7 +50,7 @@ const ScreenTooSmallPage = () => {
                     marginBottom: "20px",
                     textAlign: "center",
                     fontSize: "12px",
-                    whiteSpace: "pre", // Preserve spacing in ASCII art
+                    whiteSpace: "pre",
                 }}
             >
                 {`           ,-.
@@ -83,10 +81,10 @@ J----(===)----L
  |    ...    |
  "-----------"`}
             </div>
-            {/* Typing Effect Text */}
+
             <span
                 style={{
-                    fontSize: "18px", // Adjust font size for better readability
+                    fontSize: "18px",
                     textAlign: "center",
                     padding: "0 10px",
                 }}

@@ -17,7 +17,7 @@ const HomePage = () => {
 
     const courses = [
         { id: 1, name: 'Galaga in Rust', completionPercentage: 100, type: 'Game Development', route: '/galagacourse' },
-        { id: 2, name: 'Crossy Roads', completionPercentage: 45, type: 'Game Development', route: '/crossyroads' },
+       // { id: 2, name: 'Crossy Roads', completionPercentage: 45, type: 'Game Development', route: '/crossyroads' },
     ];
 
     return (

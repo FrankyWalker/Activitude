@@ -60,7 +60,6 @@ const signOutUser = async () => {
     }
 };
 
-// Upload file to Firebase Storage
 const uploadFile = async (file) => {
     try {
         const storageRef = ref(storage, `files/${file.name}`);
@@ -68,7 +67,7 @@ const uploadFile = async (file) => {
         console.log('File uploaded successfully:', uploadResult);
         const downloadURL = await getDownloadURL(uploadResult.ref);
         console.log('File available at:', downloadURL);
-        return downloadURL; // You can return or use the download URL to store in your database or elsewhere
+        return downloadURL;
     } catch (error) {
         console.error('Error during file upload:', error.message);
     }

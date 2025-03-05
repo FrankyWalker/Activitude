@@ -4,7 +4,30 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0762140b-86b2-4f6c-8ad8-58ef6aa06f6b" name="Changes" comment="" />
+    <list default="true" id="0762140b-86b2-4f6c-8ad8-58ef6aa06f6b" name="Changes" comment="Add React app structure with Firebase authentication setup&#10;&#10;This commit initializes the app with key components, Firebase configuration, and Redux state management for authentication. It includes a navigation bar, bottom bar, code editor, and user authentication logic using Firebase and Google Sign-In. Basic file infrastructure like gitignore, assets, and project settings has been added as well.">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Routes.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/Routes.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/assets/cypherbloomtext.jpg" beforeDir="false" afterPath="$PROJECT_DIR$/src/assets/cypherbloomtext.jpg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/AppBar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/AppBar.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/Footer.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/Footer.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/courses/galaga/IEDGalaga.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/courses/galaga/IEDGalaga.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/courses/galaga/components/BottomBar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/courses/galaga/components/BottomBar.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/courses/galaga/components/CodeEditor.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/courses/galaga/components/CodeEditor.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/courses/galaga/components/Instruction.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/courses/galaga/components/Instruction.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/courses/galaga/components/Output.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/courses/galaga/components/Output.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/firebase/firebase.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/firebase/firebase.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/logo.svg" beforeDir="false" afterPath="$PROJECT_DIR$/src/logo.svg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/Home.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/Home.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/LoginPage.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/LoginPage.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/ScreenTooSmallPage.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/ScreenTooSmallPage.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/SignUpPage.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/SignUpPage.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/Welcome.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/Welcome.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/redux/authSlice.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/redux/authSlice.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/redux/store.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/redux/store.js" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -25,6 +48,9 @@
     &quot;accountId&quot;: &quot;5efb7ae6-588e-40e7-8fd9-6aa77893b669&quot;
   }
 }</component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/src/courses/galaga/components/Output.jsx" root0="FORCE_HIGHLIGHTING" />
+  </component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="JLtbYKqf" />
   </component>
@@ -87,11 +113,36 @@
       <workItem from="1741012722408" duration="199000" />
       <workItem from="1741012934071" duration="24000" />
       <workItem from="1741015709918" duration="34000" />
-      <workItem from="1741028970034" duration="304000" />
+      <workItem from="1741028970034" duration="774000" />
+      <workItem from="1741029748938" duration="1999000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="OPEN_GENERIC_TABS">
+      <map>
+        <entry key="cc6e1e93-1b4e-4808-8d24-77d8ee3cbb2a" value="TOOL_WINDOW" />
+      </map>
+    </option>
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+        <entry key="cc6e1e93-1b4e-4808-8d24-77d8ee3cbb2a">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="LAST_COMMIT_MESSAGE" value="" />
   </component>
 </project>

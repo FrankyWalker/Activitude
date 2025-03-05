@@ -1,47 +1,31 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 
-const Instructions = () => {
-    const [tasks, setTasks] = useState([]);
-    const [progress, setProgress] = useState(null);
-
-    const fakeTasks = [
-        { id: 1, text: "Complete the React tutorial", isCompleted: false },
-        { id: 2, text: "Write tests for components", isCompleted: false },
-        { id: 3, text: "Fix UI bugs in dashboard", isCompleted: true },
-    ];
-
-    const fakeProgress = { progress: 50 };
+const Instructions = ({ tasks }) => {
+    const [progress, setProgress] = useState(0);
+    const [firstUncompletedTask, setFirstUncompletedTask] = useState(null);
 
     useEffect(() => {
-        setTasks(fakeTasks);
-        setProgress(fakeProgress);
-    }, []);
+        if (Array.isArray(tasks) && tasks.length > 0) {
+            calculateProgress(tasks);
 
-    const toggleTaskCompletion = (taskId, isCompleted) => {
-        setTasks((prevTasks) =>
-            prevTasks.map((task) =>
-                task.id === taskId ? { ...task, isCompleted: !isCompleted } : task
-            )
-        );
-        const completedTasks = tasks.filter((task) => task.isCompleted).length;
-        const newProgress = Math.round(
-            ((completedTasks + (isCompleted ? -1 : 1)) / tasks.length) * 100
-        );
-        setProgress({ progress: newProgress });
+            const uncompleted = tasks.find((task) => !task.completed);
+            setFirstUncompletedTask(uncompleted || null);
+        }
+    }, [tasks]);
+
+    const calculateProgress = (tasks) => {
+        if (!Array.isArray(tasks) || tasks.length === 0) {
+            setProgress(0);
+            return;
+        }
+        const completedCount = tasks.filter((task) => task.completed).length;
+        const progressPercentage = (completedCount / tasks.length) * 100;
+        setProgress(progressPercentage);
     };
 
     return (
         <div style={styles.container}>
-            <div style={styles.header}>
-                <h1 style={styles.title}>Galaga Course</h1>
-                {progress && (
-                    <div style={styles.progressContainer}>
-                        <div style={styles.progressBar}>
-                            <div style={{ ...styles.progressFill, width: `${progress.progress}%` }} />
-                        </div>
-                    </div>
-                )}
-            </div>
 
             <div style={styles.content}>
                 <div style={styles.documentHeader}>
@@ -50,80 +34,91 @@ const Instructions = () => {
                     <div style={styles.headerDecoration} />
                 </div>
 
+                {firstUncompletedTask && (
+                    <div style={styles.highlightedTask}>
+                        <h3 style={styles.highlightedTitle}>Next Task:</h3>
+                        <p style={styles.highlightedText}>
+                            {firstUncompletedTask.task_name}
+                        </p>
+                    </div>
+                )}
+
                 <div style={styles.taskList}>
-                    {tasks.map((task, index) => (
-                        <React.Fragment key={task.id}>
-                            <div style={styles.taskItem}>
-                                <button
+                    {Array.isArray(tasks) && tasks.length > 0 ? (
+                        tasks.map((task, index) => (
+                            <React.Fragment key={task.task_id}>
+                                <div
                                     style={{
-                                        ...styles.checkButton,
-                                        backgroundColor: task.isCompleted ? "#B388FF" : "#673AB7",
+                                        ...styles.taskItem,
+                                        opacity: task.completed ? 0.8 : 1, // Slight dimming for completed tasks
                                     }}
-                                    onClick={() => toggleTaskCompletion(task.id, task.isCompleted)}
                                 >
-                                    {task.isCompleted ? "✓" : ""}
-                                </button>
-                                <div style={styles.taskContentWrapper}>
-                                    <span style={styles.taskNumber}>{index + 1}.</span>
-                                    <span
-                                        style={{
-                                            ...styles.taskText,
-                                            color: task.isCompleted ? "#AAA" : "#FFFFFF",
-                                            backgroundColor: task.isCompleted ? "transparent" : "#2C2042",
-                                        }}
-                                    >
-                                        {task.text}
-                                    </span>
+                                    <div style={styles.taskContentWrapper}>
+                                        <span style={styles.taskNumber}>
+                                            {index + 1}.
+                                        </span>
+                                        <span style={styles.taskText}>
+                                            {task.task_name}
+                                        </span>
+                                        {task.completed && (
+                                            <span style={styles.checkmark}>
+                                                ✔
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                            {index < tasks.length - 1 && <div style={styles.taskSeparator} />}
-                        </React.Fragment>
-                    ))}
+                                {index < tasks.length - 1 && (
+                                    <div style={styles.taskSeparator} />
+                                )}
+                            </React.Fragment>
+                        ))
+                    ) : (
+                        <p style={styles.noTasksMessage}>
+                            No tasks available. Add some tasks to get started!
+                        </p>
+                    )}
                 </div>
             </div>
         </div>
     );
 };
 
+Instructions.propTypes = {
+    tasks: PropTypes.arrayOf(
+        PropTypes.shape({
+            task_id: PropTypes.string.isRequired,
+            task_name: PropTypes.string.isRequired,
+            completed: PropTypes.bool.isRequired,
+        })
+    ),
+};
+
+Instructions.defaultProps = {
+    tasks: [], // Ensure 'tasks' has a default if not passed
+};
+
+export default Instructions;
+
 const styles = {
     container: {
-        backgroundColor: "#121212",
-        color: "#FFFFFF",
+        backgroundColor: "#000",
+        color: "#FFF",
         display: "flex",
         flexDirection: "column",
         width: "100%",
         height: "100%",
         boxSizing: "border-box",
     },
-    header: {
-        backgroundColor: "#1A1A1A",
-        borderBottom: "2px solid #2C2042",
-        width: "100%",
-        padding: "10px 0",
-        boxSizing: "border-box",
-    },
+
     title: {
         margin: "10px 0",
-        color: "#D0A9FF",
+        color: "#FFF",
         fontSize: "24px",
         fontWeight: "500",
         textAlign: "center",
     },
-    progressContainer: {
-        padding: "10px 20px",
-    },
-    progressBar: {
-        width: "100%",
-        height: "8px",
-        backgroundColor: "#2C2042",
-        borderRadius: "4px",
-        overflow: "hidden",
-    },
-    progressFill: {
-        height: "100%",
-        backgroundColor: "#B388FF",
-        transition: "width 0.3s ease-in-out",
-    },
+
+
     content: {
         padding: "20px",
         width: "100%",
@@ -140,13 +135,29 @@ const styles = {
     headerDecoration: {
         flex: 1,
         height: "2px",
-        backgroundColor: "#673AB7",
+        backgroundColor: "#555",
     },
     subtitle: {
-        color: "#D0A9FF",
+        color: "#FFF",
         fontSize: "20px",
         margin: 0,
         whiteSpace: "nowrap",
+    },
+    highlightedTask: {
+        backgroundColor: "#333",
+        padding: "15px",
+        borderRadius: "6px",
+        marginBottom: "20px",
+    },
+    highlightedTitle: {
+        color: "#FFF",
+        fontSize: "18px",
+        margin: 0,
+    },
+    highlightedText: {
+        fontSize: "16px",
+        color: "#FFF",
+        margin: "5px 0 0 0",
     },
     taskList: {
         display: "flex",
@@ -155,51 +166,44 @@ const styles = {
         gap: "15px",
     },
     taskItem: {
-        backgroundColor: "#1A1A1A",
+        backgroundColor: "#111",
         borderRadius: "6px",
         padding: "12px 15px",
         display: "flex",
-        alignItems: "flex-start",
-        gap: "10px",
+        alignItems: "center",
+        gap: "15px",
         width: "100%",
         boxSizing: "border-box",
     },
     taskContentWrapper: {
         flex: 1,
         display: "flex",
-        gap: "10px",
-        alignItems: "flex-start",
+        alignItems: "center",
+        justifyContent: "space-between",
     },
     taskNumber: {
-        color: "#D0A9FF",
+        color: "#FFF",
         minWidth: "20px",
-        paddingTop: "2px",
-    },
-    checkButton: {
-        width: "24px",
-        height: "24px",
-        borderRadius: "50%",
-        border: "none",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "white",
-        cursor: "pointer",
-        transition: "background-color 0.2s ease",
-        flexShrink: 0,
     },
     taskText: {
         flex: 1,
         fontSize: "16px",
-        padding: "5px 10px",
-        borderRadius: "4px",
-        lineHeight: "1.5",
+        color: "#FFF",
+    },
+    checkmark: {
+        fontSize: "18px",
+        fontWeight: "bold",
+        color: "#00FF00",
+        marginLeft: "10px",
     },
     taskSeparator: {
         height: "1px",
-        backgroundColor: "#673AB7",
+        backgroundColor: "#555",
         margin: "10px 0",
     },
+    noTasksMessage: {
+        textAlign: "center",
+        color: "#777",
+        marginTop: "20px",
+    },
 };
-
-export default Instructions;

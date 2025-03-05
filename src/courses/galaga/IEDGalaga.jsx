@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Instructions from "./components/Instruction";
 import CodeEditor from "./components/CodeEditor";
 import Output from "./components/Output";
-import AppBar from "../../components/AppBar";
+import AppBarCourse from "./components/AppBarCourse";
 import BottomBar from "./components/BottomBar";
 
 const IEDGalaga = () => {
@@ -53,14 +53,14 @@ const IEDGalaga = () => {
             }}
         >
 
-            <AppBar style={{ position: "fixed", top: 0, width: "100%", zIndex: 1000 }} />
+            <AppBarCourse style={{ position: "fixed", top: 0, width: "100%", zIndex: 1000 }} />
 
             <div
                 style={{
                     display: "flex",
                     width: "100%",
                     height: "calc(100% - 64px - 60px)",
-                    marginTop: "70px",
+                    marginTop: "80px",
                     marginBottom: "64px",
                     overflow: "hidden",
                 }}
