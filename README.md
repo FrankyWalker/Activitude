@@ -27,7 +27,7 @@ This project is built using the following technologies:
 - **Miscellaneous**:
     - 🌟 [Monaco Editor](https://microsoft.github.io/monaco-editor/) via `@monaco-editor/react` for an advanced editor experience.
 
-## 🎓 Learning Outcomes
+## 🎓 Learning Outcome
 
 By engaging with this project, users will:
 
