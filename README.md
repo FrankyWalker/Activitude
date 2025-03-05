@@ -1,70 +1,130 @@
-# Getting Started with Create React App
+# Repl Academy: Teach Rust
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Welcome to **Repl Academy: Teach Rust**! This project is designed as an interactive and beginner-friendly platform to help users learn and practice the **Rust programming language**. Whether you're just starting with Rust or looking to enhance your skills, this project provides a structured learning experience.
 
-## Available Scripts
+## 🚀 Features
 
-In the project directory, you can run:
+- **Interactive Lessons**: Step-by-step lessons designed to build Rust knowledge from basic to advanced levels.
+- **Code Playground**: Write, test, and debug Rust code directly within the platform. Experiment with Rust without any additional setup!
+- **Challenges**: Solve real-world coding tasks to apply your newly learned skills.
+- **Progress Tracking**: Keep track of your progress and revisit your lessons for review.
+- **Rust Code Editor**: A custom embeddable editor with syntax highlighting using CodeMirror, featuring the [One Dark Theme](https://codemirror.net/) for enhanced readability.
+- **Hints & Support**: Get helpful hints and debugging tips along the way.
 
-### `npm start`
+## 🛠️ Tech Stack
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+This project is built using the following technologies:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- **Frontend**:
+    - ⚛️ [React](https://reactjs.org/) (v19.0.0) for the user interface.
+    - 📜 [CodeMirror](https://codemirror.net/) for the Rust code editor (`@codemirror/lang-rust` and `@codemirror/theme-one-dark`).
+    - 💅 [Styled-Components](https://styled-components.com/) for custom styling.
+    - [Framer Motion](https://www.framer.com/motion/) for interactive animations.
+- **State Management**:
+    - 🟥 [Redux Toolkit](https://redux-toolkit.js.org/) (v2.5.1) and [React-Redux](https://react-redux.js.org/) for state management.
+- **Backend**:
+    - 🛠️ [Firebase](https://firebase.google.com/) for authentication, database, and hosting.
+- **Miscellaneous**:
+    - 🌟 [Monaco Editor](https://microsoft.github.io/monaco-editor/) via `@monaco-editor/react` for an advanced editor experience.
 
-### `npm test`
+## 🎓 Learning Outcomes
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+By engaging with this project, users will:
 
-### `npm run build`
+1. Understand fundamental Rust concepts (ownership, borrowing, structs, enums, etc.).
+2. Write efficient, readable, and secure Rust code.
+3. Solve programming challenges that emphasize problem-solving and Rust best practices.
+4. Use Rust tooling such as `cargo` for building and testing applications.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🔥 Getting Started
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Prerequisites
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Before you begin, make sure you have the following installed:
 
-### `npm run eject`
+- [Node.js](https://nodejs.org/en/) (v16 or later)
+- [npm](https://www.npmjs.com/) (v7 or later) for managing dependencies.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+You do **not** need Rust installed on your local machine, as the project uses an in-browser Rust environment.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Installation
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+1. Clone the repository:
 
-## Learn More
+   ```bash
+   git clone https://github.com/your-username/repl-academy-teach-rust.git
+   cd repl-academy-teach-rust
+   ```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+2. Install dependencies:
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+   ```bash
+   npm install
+   ```
 
-### Code Splitting
+3. Start the development server:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+   ```bash
+   npm start
+   ```
 
-### Analyzing the Bundle Size
+4. Visit the app in your browser at [http://localhost:3000](http://localhost:3000).
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+---
 
-### Making a Progressive Web App
+### Project Structure
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Here's a quick overview of the project directory structure:
 
-### Advanced Configuration
+```plaintext
+/src
+ ├── components        # Reusable React components
+ ├── pages             # Main pages (e.g., Lessons, Challenges, Editor)
+ ├── redux             # Redux slices for state management
+ ├── services          # API and utility services
+ ├── styles            # Global and shared styles
+ └── App.js            # Main application entry point
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+---
 
-### Deployment
+## 🧪 Testing
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+We encourage writing tests to ensure a consistent and bug-free experience.
 
-### `npm run build` fails to minify
+1. Run unit tests:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+   ```bash
+   npm test
+   ```
+
+2. For end-to-end testing, consider using tools like [Cypress](https://www.cypress.io/) or [Testing Library](https://testing-library.com/).
+
+---
+
+## 🚧 Roadmap
+
+Planned features for future updates:
+
+- **Gamification**: Add badges and points for completing lessons and challenges.
+- **Multiplayer Support**: Collaborate with other learners and solve challenges together.
+- **Offline Mode**: Download lessons for offline learning.
+- **Code Refactoring Tools**: Get tips on how to write better Rust code.
+
+---
+
+## 💬 Support
+
+If you encounter any issues or have questions, feel free to open an issue in the repository or reach out to us at **support@replacademy.com**.
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE.md) file for more details.
+
+---
+
+Happy Learning! 🎉
