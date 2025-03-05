@@ -5,13 +5,13 @@ const StyledBottomBar = styled.footer`
     height: 60px;
     width: 100%;
     border-top: 1px solid white;
-    background: #000; 
+    background: #000;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0 20px;
     box-sizing: border-box;
-    position: fixed; 
+    position: fixed;
     bottom: 0;
     left: 0;
 `;
@@ -60,29 +60,56 @@ const BackButton = styled.button`
     &:hover {
         background-color: rgba(0, 255, 0, 0.1);
     }
+
+    &:disabled {
+        color: #a6a6a6;
+        border-color: #3a3a3a;
+        cursor: not-allowed;
+    }
 `;
 
 const BottomBar = () => {
     const [tasks, setTasks] = useState([]);
-    const [completedTasks, setCompletedTasks] = useState(0);
-    const [isNextEnabled, setIsNextEnabled] = useState(false);
+    const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
 
     useEffect(() => {
         const mockTasks = ["Task 1", "Task 2", "Task 3"];
         setTasks(mockTasks);
-        setCompletedTasks(1);
+        setCurrentTaskIndex(0);
     }, []);
 
-    useEffect(() => {
-        setIsNextEnabled(completedTasks === tasks.length && tasks.length > 0);
-    }, [completedTasks, tasks]);
+    const handleNext = () => {
+        if (currentTaskIndex < tasks.length - 1) {
+            setCurrentTaskIndex((prev) => prev + 1);
+        }
+    };
+
+    const handleBack = () => {
+        if (currentTaskIndex > 0) {
+            setCurrentTaskIndex((prev) => prev - 1);
+        }
+    };
 
     return (
         <StyledBottomBar>
-            <TaskStatus>{`${completedTasks}/${tasks.length} tasks`}</TaskStatus>
+            <TaskStatus>
+                {tasks.length > 0
+                    ? `Current Task: ${tasks[currentTaskIndex] || ""} (${currentTaskIndex + 1}/${tasks.length})`
+                    : "No tasks available"}
+            </TaskStatus>
             <ButtonContainer>
-                <BackButton>Back</BackButton>
-                <NextButton disabled={!isNextEnabled}>Next</NextButton>
+                <BackButton
+                    onClick={handleBack}
+                    disabled={currentTaskIndex === 0}
+                >
+                    Back
+                </BackButton>
+                <NextButton
+                    onClick={handleNext}
+                    disabled={currentTaskIndex === tasks.length - 1 || tasks.length === 0}
+                >
+                    Next
+                </NextButton>
             </ButtonContainer>
         </StyledBottomBar>
     );

@@ -1,6 +1,22 @@
 import React from 'react';
+import { signOutUser } from '../../firebase/firebase'; // Correct import for named export
 
-const ProfilePopup = ({ userDetails, profileLetter, onClose, handleSignOut }) => {
+const ProfilePopup = ({ userDetails, profileLetter, onClose }) => {
+    const handleSignOut = async () => {
+        try {
+            // Sign out using Firebase utility
+            await signOutUser();
+
+            // Clear localStorage
+            localStorage.clear();
+
+            // Refresh the page
+            window.location.reload();
+        } catch (error) {
+            console.error('Error signing out:', error);
+        }
+    };
+
     return (
         <div
             id="popup-overlay"

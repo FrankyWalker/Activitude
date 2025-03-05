@@ -1,41 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { X, ArrowRight, Check } from "lucide-react";
-import axios from "axios";
 
-const SyiblesPopup = ({ onClose }) => {
-    const [tasks, setTasks] = useState([]);
+const SyiblesPopup = ({ tasks = [], onClose }) => {
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
-        const fetchTasks = async () => {
-            try {
-                const response = await axios.get("http://localhost:8080/galaga/tasks");
-                setTasks(response.data);
-                calculateProgress(response.data);
-            } catch (error) {
-                console.error("Error fetching tasks:", error);
-            }
-        };
-
-        fetchTasks();
-    }, []);
+        calculateProgress(tasks);
+    }, [tasks]);
 
     const calculateProgress = (taskList) => {
         if (taskList && taskList.length > 0) {
             const completedTasks = taskList.filter((task) => task.completed).length;
             setProgress(Math.round((completedTasks / taskList.length) * 100));
-        }
-    };
-
-    const markTaskComplete = async (taskId) => {
-        try {
-            await axios.post(`http://localhost:8080/galaga/tasks/${taskId}/complete`);
-            const response = await axios.get("http://localhost:8080/galaga/tasks");
-            setTasks(response.data);
-            calculateProgress(response.data);
-        } catch (error) {
-            console.error("Error marking task complete:", error);
+        } else {
+            setProgress(0);
         }
     };
 
@@ -46,11 +25,7 @@ const SyiblesPopup = ({ onClose }) => {
     };
 
     return (
-        <div
-            id="popup-overlay"
-            style={overlayStyles}
-            onClick={handleOverlayClick}
-        >
+        <div id="popup-overlay" style={overlayStyles} onClick={handleOverlayClick}>
             <motion.div
                 initial={{ x: "-100%" }}
                 animate={{ x: 0 }}
@@ -85,7 +60,7 @@ const SyiblesPopup = ({ onClose }) => {
                     </div>
                     <h2 style={titleStyles}>Tasks</h2>
                     <button style={closeButtonStyles} onClick={onClose}>
-                        <X size={32} strokeWidth={3} /> {/* Larger and bolder X */}
+                        <X size={32} strokeWidth={3} />
                     </button>
                 </div>
 
@@ -105,7 +80,6 @@ const SyiblesPopup = ({ onClose }) => {
                                     ...checkmarkWrapperStyles,
                                     ...(task.completed ? completedCheckmarkStyles : {}),
                                 }}
-                                onClick={() => !task.completed && markTaskComplete(task.task_id)}
                             >
                                 {task.completed ? (
                                     <div style={completedCheckmarkIconStyles}>
@@ -131,7 +105,6 @@ const SyiblesPopup = ({ onClose }) => {
                                 style={actionButtonStyles}
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    // Add navigation or action logic here
                                     console.log(`Navigate to task ${task.task_id}`);
                                 }}
                             >
@@ -145,7 +118,7 @@ const SyiblesPopup = ({ onClose }) => {
     );
 };
 
-// Styling
+// Styles
 const overlayStyles = {
     position: "fixed",
     top: 0,
@@ -211,12 +184,9 @@ const closeButtonStyles = {
     border: "none",
     cursor: "pointer",
     color: "white",
-    padding: "10px", // Increased padding for styling
+    padding: "10px",
     transition: "opacity 0.3s ease",
-    fontWeight: "bold", // Makes the button content bold
-    ":hover": {
-        opacity: 0.7,
-    }
+    fontWeight: "bold",
 };
 
 const taskListStyles = {
@@ -249,9 +219,6 @@ const incompleteCheckmarkStyles = {
     border: "2px solid white",
     borderRadius: "4px",
     transition: "all 0.3s ease",
-    ":hover": {
-        backgroundColor: "rgba(255,255,255,0.2)",
-    }
 };
 
 const completedCheckmarkStyles = {
@@ -297,10 +264,6 @@ const actionButtonStyles = {
     fontWeight: "600",
     cursor: "pointer",
     transition: "all 0.3s ease",
-    ":hover": {
-        backgroundColor: "white",
-        color: "black",
-    }
 };
 
 const buttonIconStyles = {

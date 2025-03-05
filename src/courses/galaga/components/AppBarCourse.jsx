@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProfileButton from '../../../components/appbar_components/ProfileButton';
 import ProfilePopup from '../../../components/appbar_components/ProfilePopup';
 import SyiblesPopup from './SyiblesPopup';
 import { auth } from '../../../firebase/firebase';
+import wogo from '../../../assets/wogo.png'; // Adjust the path to your image location
 
 const AppBarCourse = () => {
     const [profileLetter, setProfileLetter] = useState('');
@@ -39,26 +39,16 @@ const AppBarCourse = () => {
             <nav style={navStyles}>
                 <div style={navContainer}>
                     <div style={leftContainer}>
-                        <button
-                            style={leftButton}
-                            onMouseOver={(e) => {
-                                e.target.style.color = '#ddd';
-                                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                                e.target.style.border = '2px solid #fff';
-                                e.target.style.transform = 'scale(1.05)';
-                                e.target.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.4)';
-                            }}
-                            onMouseOut={(e) => {
-                                e.target.style.color = '#fff';
-                                e.target.style.backgroundColor = 'transparent';
-                                e.target.style.border = '2px solid transparent';
-                                e.target.style.transform = 'scale(1)';
-                                e.target.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
-                            }}
+                        <div
+                            style={imageContainer}
                             onClick={() => navigate('/#/home')}
                         >
-                            Dashboard
-                        </button>
+                            <img
+                                src={wogo}
+                                alt="wogo"
+                                style={imageStyles}
+                            />
+                        </div>
                         <button
                             style={leftButton}
                             onMouseOver={(e) => {
@@ -101,6 +91,7 @@ const AppBarCourse = () => {
     );
 };
 
+// Styles
 const navStyles = {
     backgroundColor: '#000',
     position: 'fixed',
@@ -151,6 +142,15 @@ const leftButton = {
     textDecoration: 'none',
     transition: 'all 0.3s ease-in-out',
     boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)',
+};
+
+const imageContainer = {
+    cursor: 'pointer',
+};
+
+const imageStyles = {
+    height: '40px',
+    width: 'auto',
 };
 
 export default AppBarCourse;

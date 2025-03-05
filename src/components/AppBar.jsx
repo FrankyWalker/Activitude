@@ -4,6 +4,7 @@ import { auth } from '../firebase/firebase';
 import ProfileButton from './appbar_components/ProfileButton';
 import AuthButtons from './appbar_components/AuthButtons';
 import ProfilePopup from './appbar_components/ProfilePopup';
+import WogoType from '../assets/wogo_type.png'; // Add this line to import the image
 
 const AppBar = () => {
     const [profileLetter, setProfileLetter] = useState('');
@@ -11,8 +12,6 @@ const AppBar = () => {
     const [showPopup, setShowPopup] = useState(false);
 
     const navigate = useNavigate();
-
-
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -40,7 +39,11 @@ const AppBar = () => {
             <nav style={navStyles}>
                 <div style={navContainer}>
                     <div style={logoStyle} onClick={() => navigate('/home')}>
-                        👾
+                        <img
+                            src={WogoType} // Use the imported image here
+                            alt="Logo"
+                            style={{ height: '50px' }} // Customize the size as needed
+                        />
                     </div>
                     <div style={authContainer}>
                         {profileLetter ? (
@@ -48,7 +51,6 @@ const AppBar = () => {
                         ) : (
                             <AuthButtons navigate={navigate} />
                         )}
-
                     </div>
                 </div>
             </nav>
@@ -56,7 +58,6 @@ const AppBar = () => {
             {showPopup && (
                 <ProfilePopup userDetails={userDetails} profileLetter={profileLetter} onClose={() => setShowPopup(false)} />
             )}
-
         </>
     );
 };
@@ -83,7 +84,7 @@ const navContainer = {
 
 const logoStyle = {
     marginLeft: '-100px',
-    fontSize: '2rem',
+    fontSize: '2rem', // You can remove this if using the image
     cursor: 'pointer',
 };
 
@@ -93,7 +94,5 @@ const authContainer = {
     alignItems: 'center',
     marginLeft: 'auto',
 };
-
-
 
 export default AppBar;

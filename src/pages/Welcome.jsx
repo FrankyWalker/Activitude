@@ -5,7 +5,7 @@ import AppBar from '../components/AppBar';
 const Welcome = () => {
     const [text, setText] = useState('');
     const [showCursor, setShowCursor] = useState(true);
-    const fullText = "CYPHERJUNK";
+    const fullText = "ACTIVITUDE";
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -91,7 +91,7 @@ const Welcome = () => {
                         e.currentTarget.style.backgroundColor = 'transparent';
                         e.currentTarget.style.color = 'white';
                     }}
-                    onClick={() => navigate('/home')} // Add the navigation logic here
+                    onClick={() => navigate('/home')}
                 >
                     BEGIN
                 </button>

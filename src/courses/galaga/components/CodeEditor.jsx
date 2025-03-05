@@ -11,6 +11,24 @@ import FileCodeIcon from "@mui/icons-material/InsertDriveFile";
 import FolderIcon from "@mui/icons-material/Folder";
 import ReactDOM from "react-dom";
 
+const colors = {
+    primary: "#f4a300",
+    secondary: "#d76a00",
+    background: "#1a1f29",
+    panelBackground: "#2a323e",
+    panelBorder: "#34404e",
+    textPrimary: "#e0e0e0",
+    textSecondary: "#b0b0b0",
+    tooltipBackground: "#2b3540",
+    tooltipArrow: "#2b3540",
+    scrollbarThumb: "#3e4a59",
+    hover: "#3a4a60",
+    disabled: "#3a4a60",
+    disabledText: "#777",
+    activeTabBorder: "#f4a300",
+    activeTabBackground: "#2a323e",
+};
+
 const CodeEditor = ({ onRun }) => {
     const defaultFiles = {
         "main.rs": "// Write your Rust code here\n\nfn main() {\n    println!(\"Hello, Rust!\");\n}",
@@ -26,8 +44,6 @@ const CodeEditor = ({ onRun }) => {
     });
     const [isPlaying, setIsPlaying] = useState(false);
     const [timeoutId, setTimeoutId] = useState(null);
-    const [showFeedback, setShowFeedback] = useState(false);
-    const [feedbackMessage, setFeedbackMessage] = useState("");
 
     const handleMouseEnter = (event, tooltipContent) => {
         const { top, left, width } = event.target.getBoundingClientRect();
@@ -55,16 +71,8 @@ const CodeEditor = ({ onRun }) => {
         if (onRun) onRun(files["main.rs"], files["Cargo.toml"]);
         setIsPlaying(true);
 
-        setShowFeedback(true);
-        setFeedbackMessage("Running code...");
-
         const id = setTimeout(() => {
             setIsPlaying(false);
-            setFeedbackMessage(`Code executed successfully!\n\nMain.rs:\n${files["main.rs"]}\n\nCargo.toml:\n${files["Cargo.toml"]}`);
-
-            setTimeout(() => {
-                setShowFeedback(false);
-            }, 4000);
         }, 1500);
 
         setTimeoutId(id);
@@ -72,22 +80,10 @@ const CodeEditor = ({ onRun }) => {
 
     const handleCopyClick = () => {
         navigator.clipboard.writeText(files[activeFile]);
-        setShowFeedback(true);
-        setFeedbackMessage("Copied to clipboard!");
-
-        setTimeout(() => {
-            setShowFeedback(false);
-        }, 1500);
     };
 
     const handleResetClick = () => {
         setFiles({ ...files, [activeFile]: defaultFiles[activeFile] });
-        setShowFeedback(true);
-        setFeedbackMessage("Code reset to default");
-
-        setTimeout(() => {
-            setShowFeedback(false);
-        }, 1500);
     };
 
     const handleCodeChange = (value) => {
@@ -163,12 +159,6 @@ const CodeEditor = ({ onRun }) => {
                 </ButtonGroup>
             </ControlPanel>
 
-            {showFeedback && (
-                <FeedbackToast>
-                    {feedbackMessage}
-                </FeedbackToast>
-            )}
-
             {tooltip.visible &&
                 ReactDOM.createPortal(
                     <Tooltip style={{ top: tooltip.pos.y, left: tooltip.pos.x }}>
@@ -182,7 +172,7 @@ const CodeEditor = ({ onRun }) => {
 
 export default CodeEditor;
 
-// Styled Components
+
 const EditorContainer = styled.div`
     display: flex;
     flex-direction: column;
@@ -191,13 +181,13 @@ const EditorContainer = styled.div`
     border-radius: 0;
     overflow: hidden;
     box-shadow: 0 12px 36px rgba(0, 0, 0, 0.3);
-    background-color: #1e1e2e;
-    color: white;
+    background-color: ${colors.background};
+    color: ${colors.textPrimary};
 `;
 
 const FileTabs = styled.div`
     display: flex;
-    background-color: #252535;
+    background-color: ${colors.panelBackground};
     padding: 0;
     overflow-x: auto;
     scrollbar-width: thin;
@@ -208,7 +198,7 @@ const FileTabs = styled.div`
     }
 
     &::-webkit-scrollbar-thumb {
-        background-color: #4d4d69;
+        background-color: ${colors.scrollbarThumb};
         border-radius: 4px;
     }
 `;
@@ -217,9 +207,9 @@ const StaticFolderContainer = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #252535;
-    color: #aaa;
-    border-right: 1px solid #303042;
+    background-color: ${colors.panelBackground};
+    color: ${colors.textSecondary};
+    border-right: 1px solid ${colors.panelBorder};
     width: 40px;
     height: 40px;
 `;
@@ -232,9 +222,9 @@ const FileIconWrapper = styled.span`
 
 const FileTab = styled.div`
     padding: 12px 18px;
-    background-color: ${(props) => (props.active ? "#1e1e2e" : "transparent")};
-    color: ${(props) => (props.active ? "#f8f8f2" : "#aaa")};
-    border-bottom: 3px solid ${(props) => (props.active ? "#6366f1" : "transparent")};
+    background-color: ${(props) => (props.active ? colors.activeTabBackground : "transparent")};
+    color: ${(props) => (props.active ? colors.textPrimary : colors.textSecondary)};
+    border-bottom: 3px solid ${(props) => (props.active ? colors.activeTabBorder : "transparent")};
     cursor: pointer;
     font-size: 16px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -245,15 +235,15 @@ const FileTab = styled.div`
     white-space: nowrap;
 
     &:hover {
-        background-color: ${(props) => (props.active ? "#1e1e2e" : "#2a2a3f")};
-        color: ${(props) => (props.active ? "#f8f8f2" : "#eee")};
+        background-color: ${(props) => (props.active ? colors.activeTabBackground : colors.hover)};
+        color: ${(props) => (props.active ? colors.textPrimary : colors.textSecondary)};
     }
 `;
 
 const EditorContent = styled.div`
     flex: 1;
     width: 100%;
-    background-color: #1e1e2e;
+    background-color: ${colors.background};
     overflow: hidden;
     position: relative;
 
@@ -270,8 +260,8 @@ const ControlPanel = styled.div`
     align-items: center;
     justify-content: space-between;
     padding: 15px 25px;
-    background-color: #252535;
-    border-top: 1px solid #303042;
+    background-color: ${colors.panelBackground};
+    border-top: 1px solid ${colors.panelBorder};
     width: 100%;
 `;
 
@@ -281,10 +271,7 @@ const ButtonGroup = styled.div`
 `;
 
 const RunButton = styled.button`
-    background-color: ${(props) => {
-        if (props.disabled) return "#3b3b4f";
-        return props.playing ? "#f43f5e" : "#6366f1";
-    }};
+    background-color: ${(props) => (props.disabled ? colors.disabled : props.playing ? colors.secondary : colors.primary)};
     color: white;
     border: none;
     border-radius: 8px;
@@ -312,7 +299,7 @@ const RunButton = styled.button`
 
 const SecondaryButton = styled.button`
     background-color: transparent;
-    color: #aaa;
+    color: ${colors.textSecondary};
     border: none;
     border-radius: 8px;
     padding: 12px;
@@ -324,7 +311,7 @@ const SecondaryButton = styled.button`
 
     &:hover {
         background-color: rgba(255,255,255,0.1);
-        color: #f8f8f2;
+        color: ${colors.textPrimary};
         transform: translateY(-2px);
     }
 
@@ -339,7 +326,7 @@ const SecondaryButton = styled.button`
 
 const Tooltip = styled.div`
     position: absolute;
-    background: #3b3b4f;
+    background: ${colors.tooltipBackground};
     color: white;
     padding: 8px 12px;
     border-radius: 0;
@@ -359,33 +346,6 @@ const Tooltip = styled.div`
         margin-left: -6px;
         border-width: 6px;
         border-style: solid;
-        border-color: #3b3b4f transparent transparent transparent;
-    }
-`;
-
-const FeedbackToast = styled.div`
-    position: absolute;
-    top: 25px;
-    right: 25px;
-    background-color: #6366f1;
-    color: white;
-    padding: 12px 20px;
-    border-radius: 0;
-    font-size: 16px;
-    font-weight: 500;
-    box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4);
-    animation: slideIn 0.3s ease-out forwards;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    z-index: 100;
-
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
+        border-color: ${colors.tooltipArrow} transparent transparent transparent;
     }
 `;

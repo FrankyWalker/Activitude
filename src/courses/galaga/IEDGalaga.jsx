@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Instructions from "./components/Instruction";
 import CodeEditor from "./components/CodeEditor";
-import Output from "./components/Output";
+import Output from "./components/Terminal";
 import AppBarCourse from "./components/AppBarCourse";
 import BottomBar from "./components/BottomBar";
 
@@ -10,6 +10,7 @@ const IEDGalaga = () => {
     const [outputWidth, setOutputWidth] = useState(450);
     const [isResizingInstruction, setIsResizingInstruction] = useState(false);
     const [isResizingOutput, setIsResizingOutput] = useState(false);
+    const [outputContent, setOutputContent] = useState(""); // Holds the output
 
     const handleMouseMove = (e) => {
         if (isResizingInstruction) {
@@ -41,6 +42,13 @@ const IEDGalaga = () => {
         };
     }, [isResizingInstruction, isResizingOutput]);
 
+    // Function to handle the "Run" click in CodeEditor and display files
+    const handleRunCode = (mainRsContent, cargoTomlContent) => {
+        const contentToDisplay = `main.rs:\n${mainRsContent}\n\nCargo.toml:\n${cargoTomlContent}`;
+        console.log(contentToDisplay); // Log the output
+        setOutputContent(contentToDisplay); // Set the content to be displayed
+    };
+
     return (
         <div
             style={{
@@ -52,7 +60,6 @@ const IEDGalaga = () => {
                 overflow: "hidden",
             }}
         >
-
             <AppBarCourse style={{ position: "fixed", top: 0, width: "100%", zIndex: 1000 }} />
 
             <div
@@ -65,7 +72,6 @@ const IEDGalaga = () => {
                     overflow: "hidden",
                 }}
             >
-
                 <div
                     style={{
                         width: `${instructionsWidth}px`,
@@ -77,7 +83,7 @@ const IEDGalaga = () => {
                         flexShrink: 0,
                     }}
                 >
-                    <Instructions />
+                    <Instructions content="Step-by-step instructions for the user." />
                 </div>
 
                 <div
@@ -99,7 +105,8 @@ const IEDGalaga = () => {
                         overflow: "hidden",
                     }}
                 >
-                    <CodeEditor />
+                    {/* Passing handleRunCode to CodeEditor */}
+                    <CodeEditor onRun={handleRunCode} />
 
                     <div
                         onMouseDown={() => setIsResizingOutput(true)}
@@ -122,16 +129,18 @@ const IEDGalaga = () => {
                         minWidth: "300px",
                         height: "100%",
                         display: "flex",
+                        flexDirection: "column",
                         backgroundColor: "#1e1e1e",
                         borderLeft: "1px solid #333",
                         flexShrink: 0,
                     }}
                 >
-                    <Output output={"Your program's output will appear here."} />
+                    {/* Render outputContent */}
+                    <Output output={outputContent} />
                 </div>
             </div>
 
-            <BottomBar />
+            <BottomBar status={{ status: "Ready", warnings: "0", errors: "0" }} />
         </div>
     );
 };
