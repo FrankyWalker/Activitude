@@ -7,6 +7,7 @@ import SignUpPage from "./pages/SignUpPage";
 import HomePage from "./pages/Home";
 import ScreenTooSmallPage from "./pages/ScreenTooSmallPage";
 import IEDGalaga from "./courses/galaga/IEDGalaga";
+import Playground from "./pages/Playground";
 
 const PrivateRoute = ({ children }) => {
     const user = useSelector((state) => state.auth.user);
@@ -53,7 +54,7 @@ function AppRoutes() {
                         </PrivateRoute>
                     }
                 />
-                {/* New Galaga Course Route */}
+
                 <Route
                     path="/galagacourse"
                     element={
@@ -63,6 +64,7 @@ function AppRoutes() {
                     }
                 />
                 <Route path="*" element={<Navigate to="/" />} />
+                <Route path="/playground" element={<Playground />} />
             </Routes>
         </Router>
     );

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Instructions from "./components/Instruction";
 import CodeEditor from "./components/CodeEditor";
 import Output from "./components/Terminal";
@@ -10,8 +10,12 @@ const IEDGalaga = () => {
     const [outputWidth, setOutputWidth] = useState(450);
     const [isResizingInstruction, setIsResizingInstruction] = useState(false);
     const [isResizingOutput, setIsResizingOutput] = useState(false);
-    const [outputContent, setOutputContent] = useState(""); // Holds the output
+    const [files, setFiles] = useState({
+        "main.rs": "// Write your Rust code here\n\nfn main() {\n    println!(\"Hello, Rust!\");\n}",
+        "Cargo.toml": "[package]\nname = \"rust_project\"\nversion = \"0.1.0\"\nedition = \"2021\"\n\n[dependencies]\n",
+    });
 
+    // Handles resizing the instructions panel
     const handleMouseMove = (e) => {
         if (isResizingInstruction) {
             const newWidth = Math.min(500, Math.max(300, e.clientX));
@@ -30,7 +34,8 @@ const IEDGalaga = () => {
         setIsResizingOutput(false);
     };
 
-    React.useEffect(() => {
+    // Attach and clean up event listeners for resizing
+    useEffect(() => {
         if (isResizingInstruction || isResizingOutput) {
             window.addEventListener("mousemove", handleMouseMove);
             window.addEventListener("mouseup", handleMouseUp);
@@ -42,11 +47,13 @@ const IEDGalaga = () => {
         };
     }, [isResizingInstruction, isResizingOutput]);
 
-    // Function to handle the "Run" click in CodeEditor and display files
-    const handleRunCode = (mainRsContent, cargoTomlContent) => {
-        const contentToDisplay = `main.rs:\n${mainRsContent}\n\nCargo.toml:\n${cargoTomlContent}`;
-        console.log(contentToDisplay); // Log the output
-        setOutputContent(contentToDisplay); // Set the content to be displayed
+    // Callback to handle updates from CodeEditor
+    const handleFilesChange = (updatedFiles) => {
+        // Log the new state of the files
+        console.log("Updated files state:", updatedFiles);
+
+        // Update the latest files state
+        setFiles(updatedFiles);
     };
 
     return (
@@ -60,6 +67,7 @@ const IEDGalaga = () => {
                 overflow: "hidden",
             }}
         >
+            {/* Top App Bar */}
             <AppBarCourse style={{ position: "fixed", top: 0, width: "100%", zIndex: 1000 }} />
 
             <div
@@ -72,6 +80,7 @@ const IEDGalaga = () => {
                     overflow: "hidden",
                 }}
             >
+                {/* Instructions Panel */}
                 <div
                     style={{
                         width: `${instructionsWidth}px`,
@@ -86,6 +95,7 @@ const IEDGalaga = () => {
                     <Instructions content="Step-by-step instructions for the user." />
                 </div>
 
+                {/* Resizable Divider for Instructions */}
                 <div
                     onMouseDown={() => setIsResizingInstruction(true)}
                     style={{
@@ -96,6 +106,7 @@ const IEDGalaga = () => {
                     }}
                 ></div>
 
+                {/* Central Code Editor */}
                 <div
                     style={{
                         flex: "1",
@@ -105,9 +116,10 @@ const IEDGalaga = () => {
                         overflow: "hidden",
                     }}
                 >
-                    {/* Passing handleRunCode to CodeEditor */}
-                    <CodeEditor onRun={handleRunCode} />
+                    {/* Pass the handleFilesChange callback */}
+                    <CodeEditor onFilesChange={handleFilesChange} files={files} />
 
+                    {/* Resizable Divider for Output */}
                     <div
                         onMouseDown={() => setIsResizingOutput(true)}
                         style={{
@@ -123,6 +135,7 @@ const IEDGalaga = () => {
                     ></div>
                 </div>
 
+                {/* Output Panel (Terminal Component) */}
                 <div
                     style={{
                         width: `${outputWidth}px`,
@@ -135,11 +148,11 @@ const IEDGalaga = () => {
                         flexShrink: 0,
                     }}
                 >
-                    {/* Render outputContent */}
-                    <Output output={outputContent} />
+                    <Output files={files} initialFiles={[Object.keys(files)]} />
                 </div>
             </div>
 
+            {/* Bottom Status Bar */}
             <BottomBar status={{ status: "Ready", warnings: "0", errors: "0" }} />
         </div>
     );
