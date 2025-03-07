@@ -1,16 +1,14 @@
 import React from 'react';
-import { signOutUser } from '../../firebase/firebase'; // Correct import for named export
+import { signOutUser } from '../../firebase/firebase';
 
 const ProfilePopup = ({ userDetails, profileLetter, onClose }) => {
     const handleSignOut = async () => {
         try {
-            // Sign out using Firebase utility
+
             await signOutUser();
 
-            // Clear localStorage
             localStorage.clear();
 
-            // Refresh the page
             window.location.reload();
         } catch (error) {
             console.error('Error signing out:', error);
@@ -50,9 +48,8 @@ const ProfilePopup = ({ userDetails, profileLetter, onClose }) => {
                     position: 'relative',
                 }}
             >
-                {/* Profile Header */}
                 <div style={{
-                    background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
+                    background: '#050a18',
                     borderRadius: '16px 16px 0 0',
                     padding: '2rem',
                     textAlign: 'center',
@@ -69,7 +66,7 @@ const ProfilePopup = ({ userDetails, profileLetter, onClose }) => {
                         margin: '0 auto 1rem',
                         fontSize: '2.5rem',
                         fontWeight: 'bold',
-                        color: '#7C3AED',
+                        color: '#050a18',
                         boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
                         border: '3px solid white',
                     }}>
@@ -84,7 +81,6 @@ const ProfilePopup = ({ userDetails, profileLetter, onClose }) => {
                     </h2>
                     <p style={{ opacity: 0.9, fontSize: '1rem' }}>{userDetails?.email}</p>
 
-                    {/* Close button */}
                     <button
                         style={{
                             position: 'absolute',
@@ -109,7 +105,6 @@ const ProfilePopup = ({ userDetails, profileLetter, onClose }) => {
                     </button>
                 </div>
 
-                {/* Profile Info */}
                 <div style={{ padding: '1.5rem' }}>
                     <div style={{ marginBottom: '1.5rem' }}>
                         <h3 style={{ fontSize: '1.1rem', color: 'rgba(255, 255, 255, 0.7)', marginBottom: '0.5rem' }}>
@@ -179,7 +174,6 @@ const ProfilePopup = ({ userDetails, profileLetter, onClose }) => {
                     </div>
                 </div>
 
-                {/* Footer with Sign Out button */}
                 <div style={{
                     padding: '1.5rem',
                     borderTop: '1px solid rgba(255, 255, 255, 0.1)',

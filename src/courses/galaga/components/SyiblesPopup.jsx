@@ -34,7 +34,6 @@ const SyiblesPopup = ({ tasks = [], onClose }) => {
                 style={popupStyles}
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Header Section */}
                 <div style={headerStyles}>
                     <div style={progressWrapperStyles}>
                         <svg viewBox="0 0 36 36" style={progressCircleStyles}>
@@ -64,7 +63,6 @@ const SyiblesPopup = ({ tasks = [], onClose }) => {
                     </button>
                 </div>
 
-                {/* Main Task List */}
                 <div style={taskListStyles}>
                     {tasks.map((task) => (
                         <div
@@ -74,7 +72,6 @@ const SyiblesPopup = ({ tasks = [], onClose }) => {
                                 ...(task.completed ? completedTaskStyles : {}),
                             }}
                         >
-                            {/* Custom Checkmark */}
                             <div
                                 style={{
                                     ...checkmarkWrapperStyles,
@@ -90,7 +87,6 @@ const SyiblesPopup = ({ tasks = [], onClose }) => {
                                 )}
                             </div>
 
-                            {/* Task Content */}
                             <div style={taskContentStyles}>
                                 <h3 style={taskTitleStyles}>{task.task_name}</h3>
                                 {task.description && (
@@ -100,7 +96,6 @@ const SyiblesPopup = ({ tasks = [], onClose }) => {
                                 )}
                             </div>
 
-                            {/* Action Button */}
                             <button
                                 style={actionButtonStyles}
                                 onClick={(e) => {
@@ -118,7 +113,6 @@ const SyiblesPopup = ({ tasks = [], onClose }) => {
     );
 };
 
-// Styles
 const overlayStyles = {
     position: "fixed",
     top: 0,
@@ -132,8 +126,8 @@ const overlayStyles = {
 };
 
 const popupStyles = {
-    width: "600px",
-    backgroundColor: "black",
+    width: "500px",
+    backgroundColor: "#050a18",
     height: "100%",
     overflowY: "auto",
     color: "white",
@@ -202,7 +196,7 @@ const taskItemStyles = {
 };
 
 const completedTaskStyles = {
-    backgroundColor: "rgba(255, 255, 255, 0.05)", // Subtle highlight
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
 };
 
 const checkmarkWrapperStyles = {

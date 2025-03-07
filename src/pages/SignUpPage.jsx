@@ -33,7 +33,7 @@ const SignUpPage = () => {
                 flexDirection: 'column',
                 justifyContent: 'center',
                 alignItems: 'center',
-                backgroundColor: 'black',
+                backgroundColor: '#050a18',
                 color: 'white',
                 padding: '20px',
                 boxSizing: 'border-box',

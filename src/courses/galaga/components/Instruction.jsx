@@ -50,7 +50,7 @@ const Instructions = ({ tasks }) => {
                                 <div
                                     style={{
                                         ...styles.taskItem,
-                                        opacity: task.completed ? 0.8 : 1, // Slight dimming for completed tasks
+                                        opacity: task.completed ? 0.8 : 1,
                                     }}
                                 >
                                     <div style={styles.taskContentWrapper}>
@@ -94,14 +94,14 @@ Instructions.propTypes = {
 };
 
 Instructions.defaultProps = {
-    tasks: [], // Ensure 'tasks' has a default if not passed
+    tasks: [],
 };
 
 export default Instructions;
 
 const styles = {
     container: {
-        backgroundColor: "#000",
+        backgroundColor: "#050a18",
         color: "#FFF",
         display: "flex",
         flexDirection: "column",

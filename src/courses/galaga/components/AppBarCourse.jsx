@@ -93,14 +93,14 @@ const AppBarCourse = () => {
 
 // Styles
 const navStyles = {
-    backgroundColor: '#000',
+    backgroundColor: '#050a18',
     position: 'fixed',
     width: '100%',
     top: 0,
     zIndex: 1000,
     padding: '1rem 0',
     boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
-    borderBottom: '1px solid white',
+    borderBottom: '2px solid #ff7700',
 };
 
 const navContainer = {

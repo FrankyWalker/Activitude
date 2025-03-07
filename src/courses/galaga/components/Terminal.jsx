@@ -1,14 +1,99 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 
-const CustomTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Cargo.toml"]] }) => {
+const RealTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Cargo.toml"]] }) => {
     const [terminals, setTerminals] = useState([{ id: 1, name: "Term", files: initialFiles[0] }]);
     const [activeTerminal, setActiveTerminal] = useState(1);
-    const terminalHistoryRef = useRef({});
-    const terminalInputRefs = useRef({});
-    const terminalContentRefs = useRef({});
-    const fileContentRef = useRef({...files});
-    const prevFilesRef = useRef({});
+    const terminalRefs = useRef({});
+    const wsRef = useRef(null);
+
+    const [processRunning, setProcessRunning] = useState({});
+
+    const [history, setHistory] = useState({});
+    const [cursorPosition, setCursorPosition] = useState({});
+    const [inputBuffer, setInputBuffer] = useState({});
+    const [commandHistory, setCommandHistory] = useState({});
+    const [historyIndex, setHistoryIndex] = useState({});
+
+    useEffect(() => {
+        const newHistory = { ...history };
+        const newCursorPosition = { ...cursorPosition };
+        const newInputBuffer = { ...inputBuffer };
+        const newCommandHistory = { ...commandHistory };
+        const newHistoryIndex = { ...historyIndex };
+        const newProcessRunning = { ...processRunning };
+
+        terminals.forEach(terminal => {
+            if (!newHistory[terminal.id]) {
+                newHistory[terminal.id] = [
+                    { type: 'output', text: 'Welcome to the Rust terminal!', className: 'terminal-welcome' },
+                    { type: 'output', text: terminal.files.join('  '), className: '' }
+                ];
+                newCursorPosition[terminal.id] = 0;
+                newInputBuffer[terminal.id] = '';
+                newCommandHistory[terminal.id] = [];
+                newHistoryIndex[terminal.id] = -1;
+                newProcessRunning[terminal.id] = false;
+            }
+        });
+
+        setHistory(newHistory);
+        setCursorPosition(newCursorPosition);
+        setInputBuffer(newInputBuffer);
+        setCommandHistory(newCommandHistory);
+        setHistoryIndex(newHistoryIndex);
+        setProcessRunning(newProcessRunning);
+    }, [terminals]);
+
+    useEffect(() => {
+        if (!wsRef.current) {
+            wsRef.current = new WebSocket('ws://localhost:8080');
+
+            wsRef.current.onopen = () => {
+                console.log('Connected to WebSocket server');
+                addOutputToTerminal(activeTerminal, 'Connected to server', 'terminal-info');
+            };
+
+            wsRef.current.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                if (data.output) {
+                    addOutputToTerminal(activeTerminal, data.output.trim(), 'terminal-success');
+                } else if (data.error) {
+                    addOutputToTerminal(activeTerminal, data.error.trim(), 'terminal-error');
+                } else if (data.status) {
+                    if (data.status.includes('Process exited') || data.status.includes('Rust process stopped')) {
+                        setProcessRunning(prev => ({ ...prev, [activeTerminal]: false }));
+                    }
+                    addOutputToTerminal(activeTerminal, data.status, 'terminal-info');
+                }
+            };
+
+            wsRef.current.onclose = () => {
+                console.log('Disconnected from WebSocket server');
+                addOutputToTerminal(activeTerminal, 'Disconnected from server', 'terminal-error');
+                setProcessRunning(prev => {
+                    const newState = { ...prev };
+                    Object.keys(newState).forEach(key => {
+                        newState[key] = false;
+                    });
+                    return newState;
+                });
+            };
+
+            wsRef.current.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                addOutputToTerminal(activeTerminal, 'WebSocket error', 'terminal-error');
+            };
+        }
+
+        return () => {
+            if (wsRef.current) {
+                wsRef.current.close();
+                wsRef.current = null;
+            }
+        };
+    }, [activeTerminal]);
 
     const COLORS = {
         PROMPT: 'terminal-prompt',
@@ -22,18 +107,20 @@ const CustomTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Carg
         UPDATE: 'terminal-update',
     };
 
-    useEffect(() => {
-        terminals.forEach(terminal => {
-            if (!terminalHistoryRef.current[terminal.id]) {
-                terminalHistoryRef.current[terminal.id] = {
-                    commands: [],
-                    output: [],
-                    commandIndex: -1,
-                    currentCommand: ''
-                };
-            }
+    const addOutputToTerminal = (terminalId, text, className = '') => {
+        setHistory(prev => {
+            const terminalHistory = [...(prev[terminalId] || [])];
+            terminalHistory.push({ type: 'output', text, className });
+            return { ...prev, [terminalId]: terminalHistory };
         });
-    }, [terminals]);
+
+        setTimeout(() => {
+            if (terminalRefs.current[terminalId]) {
+                const element = terminalRefs.current[terminalId];
+                element.scrollTop = element.scrollHeight;
+            }
+        }, 10);
+    };
 
     const addNewTerminal = () => {
         const newId = terminals.length > 0 ? Math.max(...terminals.map(t => t.id)) + 1 : 1;
@@ -46,6 +133,10 @@ const CustomTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Carg
         e.stopPropagation();
         if (terminals.length === 1) return;
 
+        if (processRunning[id]) {
+            stopProcess(id);
+        }
+
         const newTerminals = terminals.filter(t => t.id !== id);
         setTerminals(newTerminals);
 
@@ -53,19 +144,53 @@ const CustomTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Carg
             setActiveTerminal(newTerminals[0].id);
         }
 
-        delete terminalHistoryRef.current[id];
+        setHistory(prev => {
+            const newHistory = { ...prev };
+            delete newHistory[id];
+            return newHistory;
+        });
+
+        setCursorPosition(prev => {
+            const newPos = { ...prev };
+            delete newPos[id];
+            return newPos;
+        });
+
+        setInputBuffer(prev => {
+            const newBuffer = { ...prev };
+            delete newBuffer[id];
+            return newBuffer;
+        });
+
+        setCommandHistory(prev => {
+            const newCmdHistory = { ...prev };
+            delete newCmdHistory[id];
+            return newCmdHistory;
+        });
+
+        setHistoryIndex(prev => {
+            const newIndex = { ...prev };
+            delete newIndex[id];
+            return newIndex;
+        });
+
+        setProcessRunning(prev => {
+            const newProcessRunning = { ...prev };
+            delete newProcessRunning[id];
+            return newProcessRunning;
+        });
     };
 
     const switchTerminal = (id) => {
         setActiveTerminal(id);
         setTimeout(() => {
-            if (terminalInputRefs.current[id]) {
-                terminalInputRefs.current[id].focus();
+            if (terminalRefs.current[id]) {
+                terminalRefs.current[id].focus();
             }
         }, 50);
     };
 
-    const colorizeFiles = (filename) => {
+    const getFileColor = (filename) => {
         if (filename.endsWith('.rs')) {
             return COLORS.RUST_FILE;
         } else if (filename.endsWith('.toml')) {
@@ -74,128 +199,214 @@ const CustomTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Carg
         return '';
     };
 
+    const stopProcess = (terminalId) => {
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+                action: 'stop'
+            }));
+            addOutputToTerminal(terminalId, "^C", COLORS.ERROR);
+        }
+    };
+
     const processCommand = (terminalId, command) => {
+
+        if (processRunning[terminalId]) {
+            return;
+        }
+
         const terminalObj = terminals.find(t => t.id === terminalId);
         const terminalFiles = terminalObj ? terminalObj.files : [];
-        let output = [];
+
+        setCommandHistory(prev => {
+            const newHistory = [...(prev[terminalId] || [])];
+            if (command.trim()) {
+                newHistory.push(command);
+            }
+            return { ...prev, [terminalId]: newHistory };
+        });
+
+        setHistoryIndex(prev => ({ ...prev, [terminalId]: -1 }));
+
+        setHistory(prev => {
+            const terminalHistory = [...(prev[terminalId] || [])];
+            terminalHistory.push({ type: 'command', text: command, prompt: '$' });
+            return { ...prev, [terminalId]: terminalHistory };
+        });
 
         if (command === 'ls') {
-            terminalFiles.forEach(file => {
-                output.push({
-                    text: file,
-                    className: colorizeFiles(file)
-                });
+            // List files
+            const fileOutput = terminalFiles.map(file => ({
+                type: 'output',
+                text: file,
+                className: getFileColor(file)
+            }));
+
+            setHistory(prev => {
+                const terminalHistory = [...(prev[terminalId] || []), ...fileOutput];
+                return { ...prev, [terminalId]: terminalHistory };
             });
-        } else if (command === 'clear') {
-            const history = terminalHistoryRef.current[terminalId];
-            if (history) {
-                history.output = [];
+        }
+        else if (command === 'clear') {
+            // Clear terminal
+            setHistory(prev => ({ ...prev, [terminalId]: [] }));
+        }
+        else if (command === 'cargo run') {
+
+            if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                const cargoToml = files['Cargo.toml'] || '';
+                const mainRs = files['main.rs'] || '';
+
+                wsRef.current.send(JSON.stringify({
+                    cargoToml,
+                    mainRs
+                }));
+
+                addOutputToTerminal(terminalId, "Running on server...", COLORS.INFO);
+                setProcessRunning(prev => ({ ...prev, [terminalId]: true }));
+            } else {
+                addOutputToTerminal(terminalId, "WebSocket connection not established.", COLORS.ERROR);
             }
-            return [];
-        } else if (command === 'cargo run') {
-            output.push(
-                { text: "Running `target/debug/your_project`", className: COLORS.SUCCESS },
-                { text: "Hello, World!", className: COLORS.SUCCESS }
-            );
-        } else if (command.startsWith('cat ')) {
+        }
+        else if (command.startsWith('cat ')) {
+
             const filename = command.substring(4).trim();
             if (terminalFiles.includes(filename)) {
                 if (files[filename]) {
-                    output.push({ text: `${filename}:`, className: COLORS.RUST_FILE });
+                    addOutputToTerminal(terminalId, `${filename}:`, getFileColor(filename));
 
                     files[filename].split('\n').forEach(line => {
-                        output.push({ text: line });
+                        addOutputToTerminal(terminalId, line);
                     });
                 } else {
-                    output.push({ text: `No content available for file: ${filename}`, className: COLORS.ERROR });
+                    addOutputToTerminal(terminalId, `No content available for file: ${filename}`, COLORS.ERROR);
                 }
             } else {
-                output.push({ text: `No such file or directory: ${filename}`, className: COLORS.ERROR });
+                addOutputToTerminal(terminalId, `No such file or directory: ${filename}`, COLORS.ERROR);
             }
-        } else if (command === 'help') {
-            output.push(
-                { text: "Available commands:", className: COLORS.INFO },
-                { text: "  ls            - List files" },
-                { text: "  cat <file>    - Show file contents" },
-                { text: "  cargo run     - Run the Rust program" },
-                { text: "  clear         - Clear the terminal" },
-                { text: "  help          - Show this help" }
-            );
-        } else if (command.trim() === '') {
-        } else {
-            output.push({ text: `Command not found: ${command}`, className: COLORS.ERROR });
+        }
+        else if (command === 'help') {
+
+            addOutputToTerminal(terminalId, "Available commands:", COLORS.INFO);
+            addOutputToTerminal(terminalId, "  ls            - List files");
+            addOutputToTerminal(terminalId, "  cat <file>    - Show file contents");
+            addOutputToTerminal(terminalId, "  cargo run     - Run the Rust program (executes on server)");
+            addOutputToTerminal(terminalId, "  clear         - Clear the terminal");
+            addOutputToTerminal(terminalId, "  help          - Show this help");
+            addOutputToTerminal(terminalId, "  Ctrl+C        - Stop running process");
+        }
+        else if (command.trim() === '') {
+        }
+        else {
+            addOutputToTerminal(terminalId, `Command not found: ${command}`, COLORS.ERROR);
         }
 
-        return output;
-    };
+        setInputBuffer(prev => ({ ...prev, [terminalId]: '' }));
 
-    const handleCommandSubmit = (terminalId, command) => {
-        const history = terminalHistoryRef.current[terminalId];
-
-        history.commands.push(command);
-        history.commandIndex = -1;
-
-        const output = processCommand(terminalId, command);
-
-        if (command === 'clear') {
-            history.output = [];
-        } else {
-            history.output.push({
-                type: 'command',
-                text: command,
-                prompt: '$'
-            });
-
-            output.forEach(line => {
-                history.output.push({
-                    type: 'output',
-                    ...line
-                });
-            });
-        }
-
-        history.currentCommand = '';
-
-        setTerminals([...terminals]);
-
-        if (terminalContentRefs.current[terminalId]) {
-            const element = terminalContentRefs.current[terminalId];
-            element.scrollTop = element.scrollHeight;
-        }
+        setTimeout(() => {
+            if (terminalRefs.current[terminalId]) {
+                const element = terminalRefs.current[terminalId];
+                element.scrollTop = element.scrollHeight;
+            }
+        }, 10);
     };
 
     const handleKeyDown = (terminalId, e) => {
-        const history = terminalHistoryRef.current[terminalId];
-
-        if (e.key === 'ArrowUp') {
+        if (e.ctrlKey && e.key === 'c') {
             e.preventDefault();
-            if (history.commands.length > 0) {
-                const newIndex = history.commandIndex === -1
-                    ? history.commands.length - 1
-                    : Math.max(0, history.commandIndex - 1);
 
-                history.commandIndex = newIndex;
-                history.currentCommand = history.commands[newIndex];
-
-                setTerminals([...terminals]);
+            if (processRunning[terminalId]) {
+                stopProcess(terminalId);
+                return;
+            } else {
+                addOutputToTerminal(terminalId, "^C", COLORS.ERROR);
+                setInputBuffer(prev => ({ ...prev, [terminalId]: '' }));
+                return;
             }
-        } else if (e.key === 'ArrowDown') {
+        }
+
+
+        if (processRunning[terminalId]) {
             e.preventDefault();
-            if (history.commandIndex !== -1) {
-                const newIndex = history.commandIndex < history.commands.length - 1
-                    ? history.commandIndex + 1
+            return;
+        }
+
+        e.preventDefault();
+
+        const cmdHistory = commandHistory[terminalId] || [];
+        const index = historyIndex[terminalId] || -1;
+        const buffer = inputBuffer[terminalId] || '';
+
+        if (e.key === 'Enter') {
+            processCommand(terminalId, buffer);
+        }
+        else if (e.key === 'ArrowUp') {
+            if (cmdHistory.length > 0) {
+                const newIndex = index === -1
+                    ? cmdHistory.length - 1
+                    : Math.max(0, index - 1);
+
+                setHistoryIndex(prev => ({ ...prev, [terminalId]: newIndex }));
+                setInputBuffer(prev => ({ ...prev, [terminalId]: cmdHistory[newIndex] }));
+
+                setCursorPosition(prev => ({
+                    ...prev,
+                    [terminalId]: cmdHistory[newIndex].length
+                }));
+            }
+        }
+        else if (e.key === 'ArrowDown') {
+            if (index !== -1) {
+                const newIndex = index < cmdHistory.length - 1
+                    ? index + 1
                     : -1;
 
-                history.commandIndex = newIndex;
-                history.currentCommand = newIndex === -1 ? '' : history.commands[newIndex];
+                setHistoryIndex(prev => ({ ...prev, [terminalId]: newIndex }));
 
-                setTerminals([...terminals]);
+                const newCommand = newIndex === -1 ? '' : cmdHistory[newIndex];
+                setInputBuffer(prev => ({ ...prev, [terminalId]: newCommand }));
+
+                setCursorPosition(prev => ({
+                    ...prev,
+                    [terminalId]: newCommand.length
+                }));
             }
-        } else if (e.key === 'Tab') {
-            e.preventDefault();
-            const currentCommand = history.currentCommand;
-            if (currentCommand.startsWith('cat ')) {
-                const partialFilename = currentCommand.substring(4).trim();
+        }
+        else if (e.key === 'ArrowLeft') {
+            setCursorPosition(prev => ({
+                ...prev,
+                [terminalId]: Math.max(0, (prev[terminalId] || 0) - 1)
+            }));
+        }
+        else if (e.key === 'ArrowRight') {
+            setCursorPosition(prev => ({
+                ...prev,
+                [terminalId]: Math.min(buffer.length, (prev[terminalId] || 0) + 1)
+            }));
+        }
+        else if (e.key === 'Home') {
+            setCursorPosition(prev => ({ ...prev, [terminalId]: 0 }));
+        }
+        else if (e.key === 'End') {
+            setCursorPosition(prev => ({ ...prev, [terminalId]: buffer.length }));
+        }
+        else if (e.key === 'Backspace') {
+            const pos = cursorPosition[terminalId] || 0;
+            if (pos > 0) {
+                const newBuffer = buffer.substring(0, pos - 1) + buffer.substring(pos);
+                setInputBuffer(prev => ({ ...prev, [terminalId]: newBuffer }));
+                setCursorPosition(prev => ({ ...prev, [terminalId]: pos - 1 }));
+            }
+        }
+        else if (e.key === 'Delete') {
+            const pos = cursorPosition[terminalId] || 0;
+            if (pos < buffer.length) {
+                const newBuffer = buffer.substring(0, pos) + buffer.substring(pos + 1);
+                setInputBuffer(prev => ({ ...prev, [terminalId]: newBuffer }));
+            }
+        }
+        else if (e.key === 'Tab') {
+            if (buffer.startsWith('cat ')) {
+                const partialFilename = buffer.substring(4).trim();
                 const terminalObj = terminals.find(t => t.id === terminalId);
                 const terminalFiles = terminalObj ? terminalObj.files : [];
 
@@ -204,48 +415,24 @@ const CustomTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Carg
                 );
 
                 if (matches.length === 1) {
-                    history.currentCommand = `cat ${matches[0]}`;
-                    setTerminals([...terminals]);
+                    const newBuffer = `cat ${matches[0]}`;
+                    setInputBuffer(prev => ({ ...prev, [terminalId]: newBuffer }));
+                    setCursorPosition(prev => ({ ...prev, [terminalId]: newBuffer.length }));
                 }
             }
         }
-    };
-
-    const handleInputChange = (terminalId, e) => {
-        const history = terminalHistoryRef.current[terminalId];
-        history.currentCommand = e.target.value;
-
-        setTerminals([...terminals]);
+        else if (e.key.length === 1) {
+            const pos = cursorPosition[terminalId] || 0;
+            const newBuffer = buffer.substring(0, pos) + e.key + buffer.substring(pos);
+            setInputBuffer(prev => ({ ...prev, [terminalId]: newBuffer }));
+            setCursorPosition(prev => ({ ...prev, [terminalId]: pos + 1 }));
+        }
     };
 
     useEffect(() => {
-        const changedFiles = [];
-        for (const filename in files) {
-            if (prevFilesRef.current[filename] !== files[filename]) {
-                changedFiles.push(filename);
-            }
-        }
-
-        if (changedFiles.length > 0) {
-            prevFilesRef.current = { ...files };
-            fileContentRef.current = { ...files };
-
-            const history = terminalHistoryRef.current[activeTerminal];
-            if (history) {
-
-                setTerminals([...terminals]);
-
-                if (terminalContentRefs.current[activeTerminal]) {
-                    const element = terminalContentRefs.current[activeTerminal];
-                    element.scrollTop = element.scrollHeight;
-                }
-            }
-        }
-    }, [files, activeTerminal, terminals]);
-
-    useEffect(() => {
-        if (terminalInputRefs.current[activeTerminal]) {
-            terminalInputRefs.current[activeTerminal].focus();
+        const terminalElement = terminalRefs.current[activeTerminal];
+        if (terminalElement) {
+            terminalElement.focus();
         }
     }, [activeTerminal]);
 
@@ -260,13 +447,14 @@ const CustomTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Carg
                         </svg>
                     </TerminalIconWrapper>
                     <DividerLine />
-                    <AddButtonWrapper onClick={addNewTerminal}>
+                    <AddButtonWrapper onClick={addNewTerminal} title="New Terminal">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M12 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                             <path d="M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                     </AddButtonWrapper>
                 </TerminalIconSection>
+
                 <TabsContainer>
                     {terminals.map(terminal => (
                         <Tab
@@ -283,7 +471,10 @@ const CustomTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Carg
                                 </TerminalTabIcon>
                                 <TabText>{terminal.name}</TabText>
                                 {terminals.length > 1 && (
-                                    <CloseButton onClick={(e) => closeTerminal(terminal.id, e)}>
+                                    <CloseButton
+                                        onClick={(e) => closeTerminal(terminal.id, e)}
+                                        title="Close Terminal"
+                                    >
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                             <path d="M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -295,36 +486,26 @@ const CustomTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Carg
                     ))}
                 </TabsContainer>
             </TerminalHeader>
+
             <TerminalsContainer>
                 {terminals.map(terminal => {
-                    const history = terminalHistoryRef.current[terminal.id] || { output: [], currentCommand: '' };
+                    const terminalId = terminal.id;
+                    const terminalHistory = history[terminalId] || [];
+                    const buffer = inputBuffer[terminalId] || '';
+                    const cursorPos = cursorPosition[terminalId] || 0;
+                    const isProcessRunning = processRunning[terminalId];
 
                     return (
                         <TerminalWrapper
-                            key={terminal.id}
-                            active={terminal.id === activeTerminal}
+                            key={terminalId}
+                            active={terminalId === activeTerminal}
                         >
                             <TerminalContent
-                                ref={el => terminalContentRefs.current[terminal.id] = el}
-                                onClick={() => {
-                                    if (terminal.id === activeTerminal && terminalInputRefs.current[terminal.id]) {
-                                        terminalInputRefs.current[terminal.id].focus();
-                                    }
-                                }}
+                                ref={el => terminalRefs.current[terminalId] = el}
+                                tabIndex={0}
+                                onKeyDown={e => handleKeyDown(terminalId, e)}
                             >
-                                <WelcomeMessage className={COLORS.WELCOME}>
-                                    Welcome to the Rust terminal!
-                                </WelcomeMessage>
-
-                                <div>
-                                    {terminal.files.map((file, index) => (
-                                        <div key={index} className={colorizeFiles(file)}>
-                                            {file}
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {history.output.map((item, index) => (
+                                {terminalHistory.map((item, index) => (
                                     <div key={index}>
                                         {item.type === 'command' ? (
                                             <CommandLine>
@@ -339,27 +520,28 @@ const CustomTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Carg
                                     </div>
                                 ))}
 
-                                <CommandLine>
-                                    <Prompt>$</Prompt>
-                                    <InputWrapper>
-                                        <HiddenInput
-                                            ref={el => terminalInputRefs.current[terminal.id] = el}
-                                            type="text"
-                                            value={history.currentCommand}
-                                            onChange={(e) => handleInputChange(terminal.id, e)}
-                                            onKeyDown={(e) => handleKeyDown(terminal.id, e)}
-                                            onKeyPress={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    handleCommandSubmit(terminal.id, history.currentCommand);
-                                                }
-                                            }}
-                                        />
-                                        <InputDisplay className={COLORS.COMMAND}>
-                                            {history.currentCommand}
-                                        </InputDisplay>
-                                        <Cursor active={terminal.id === activeTerminal} />
-                                    </InputWrapper>
-                                </CommandLine>
+
+                                {!isProcessRunning && (
+                                    <CommandLine>
+                                        <Prompt>$</Prompt>
+                                        <InputLine>
+                                            <span className={COLORS.COMMAND}>
+                                                {buffer.substring(0, cursorPos)}
+                                            </span>
+
+                                            <Cursor
+                                                active={terminalId === activeTerminal}
+                                                className={COLORS.COMMAND}
+                                            >
+                                                {cursorPos < buffer.length ? buffer.charAt(cursorPos) : ' '}
+                                            </Cursor>
+
+                                            <span className={COLORS.COMMAND}>
+                                                {buffer.substring(cursorPos + 1)}
+                                            </span>
+                                        </InputLine>
+                                    </CommandLine>
+                                )}
                             </TerminalContent>
                         </TerminalWrapper>
                     );
@@ -369,14 +551,14 @@ const CustomTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Carg
     );
 };
 
-export default CustomTerminalComponent;
+export default RealTerminalComponent;
 
 const Container = styled.div`
     display: flex;
     flex-direction: column;
     width: 100%;
     height: 100vh;
-    border: 1px solid #FF4500;
+
     background-color: #000000;
     box-sizing: border-box;
     font-family: 'Inter', 'Roboto', sans-serif;
@@ -547,6 +729,7 @@ const TerminalContent = styled.div`
     font-size: 14px;
     line-height: 1.5;
     background-color: #000;
+    outline: none;
 
     &::-webkit-scrollbar {
         width: 8px;
@@ -603,7 +786,7 @@ const TerminalContent = styled.div`
 const CommandLine = styled.div`
     display: flex;
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start;
     margin: 2px 0;
 `;
 
@@ -623,41 +806,21 @@ const OutputLine = styled.div`
     word-break: break-word;
 `;
 
-const WelcomeMessage = styled.div`
-    margin-bottom: 10px;
-    font-weight: bold;
-`;
-
-const InputWrapper = styled.div`
-    position: relative;
+const InputLine = styled.div`
     flex: 1;
-    display: flex;
-    align-items: center;
-`;
-
-const HiddenInput = styled.input`
-    position: absolute;
-    opacity: 0;
-    height: 0;
-    width: 100%;
-    z-index: 1;
-    cursor: text;
-`;
-
-const InputDisplay = styled.span`
-    color: #e5c07b;
+    min-height: 1em;
+    white-space: pre-wrap;
+    word-break: break-word;
 `;
 
 const Cursor = styled.span`
     display: inline-block;
-    width: 8px;
-    height: 16px;
-    background-color: #00aaff;
+    background-color: ${props => props.active ? '#00aaff' : 'transparent'};
+    color: #000;
     animation: ${props => props.active ? 'blink 1s step-end infinite' : 'none'};
-    margin-left: 1px;
-    
+
     @keyframes blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0; }
+        0%, 100% { background-color: #00aaff; color: #000; }
+        50% { background-color: transparent; color: #e5c07b; }
     }
 `;

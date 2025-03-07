@@ -15,7 +15,7 @@ const IEDGalaga = () => {
         "Cargo.toml": "[package]\nname = \"rust_project\"\nversion = \"0.1.0\"\nedition = \"2021\"\n\n[dependencies]\n",
     });
 
-    // Handles resizing the instructions panel
+
     const handleMouseMove = (e) => {
         if (isResizingInstruction) {
             const newWidth = Math.min(500, Math.max(300, e.clientX));
@@ -34,7 +34,7 @@ const IEDGalaga = () => {
         setIsResizingOutput(false);
     };
 
-    // Attach and clean up event listeners for resizing
+
     useEffect(() => {
         if (isResizingInstruction || isResizingOutput) {
             window.addEventListener("mousemove", handleMouseMove);
@@ -47,12 +47,11 @@ const IEDGalaga = () => {
         };
     }, [isResizingInstruction, isResizingOutput]);
 
-    // Callback to handle updates from CodeEditor
+
     const handleFilesChange = (updatedFiles) => {
-        // Log the new state of the files
+
         console.log("Updated files state:", updatedFiles);
 
-        // Update the latest files state
         setFiles(updatedFiles);
     };
 
@@ -67,7 +66,7 @@ const IEDGalaga = () => {
                 overflow: "hidden",
             }}
         >
-            {/* Top App Bar */}
+
             <AppBarCourse style={{ position: "fixed", top: 0, width: "100%", zIndex: 1000 }} />
 
             <div
@@ -80,7 +79,6 @@ const IEDGalaga = () => {
                     overflow: "hidden",
                 }}
             >
-                {/* Instructions Panel */}
                 <div
                     style={{
                         width: `${instructionsWidth}px`,
@@ -95,7 +93,6 @@ const IEDGalaga = () => {
                     <Instructions content="Step-by-step instructions for the user." />
                 </div>
 
-                {/* Resizable Divider for Instructions */}
                 <div
                     onMouseDown={() => setIsResizingInstruction(true)}
                     style={{
@@ -106,7 +103,6 @@ const IEDGalaga = () => {
                     }}
                 ></div>
 
-                {/* Central Code Editor */}
                 <div
                     style={{
                         flex: "1",
@@ -116,10 +112,8 @@ const IEDGalaga = () => {
                         overflow: "hidden",
                     }}
                 >
-                    {/* Pass the handleFilesChange callback */}
                     <CodeEditor onFilesChange={handleFilesChange} files={files} />
 
-                    {/* Resizable Divider for Output */}
                     <div
                         onMouseDown={() => setIsResizingOutput(true)}
                         style={{
@@ -135,7 +129,6 @@ const IEDGalaga = () => {
                     ></div>
                 </div>
 
-                {/* Output Panel (Terminal Component) */}
                 <div
                     style={{
                         width: `${outputWidth}px`,
@@ -152,7 +145,6 @@ const IEDGalaga = () => {
                 </div>
             </div>
 
-            {/* Bottom Status Bar */}
             <BottomBar status={{ status: "Ready", warnings: "0", errors: "0" }} />
         </div>
     );

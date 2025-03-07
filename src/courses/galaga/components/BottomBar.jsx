@@ -4,8 +4,8 @@ import styled from "styled-components";
 const StyledBottomBar = styled.footer`
     height: 60px;
     width: 100%;
-    border-top: 1px solid white;
-    background: #000;
+    border-top: 2px solid #ff7700;
+    background: #050a18;
     display: flex;
     align-items: center;
     justify-content: center;
