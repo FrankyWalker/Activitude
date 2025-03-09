@@ -5,6 +5,8 @@ import Output from "./components/Terminal";
 import AppBarCourse from "./components/AppBarCourse";
 import BottomBar from "./components/BottomBar";
 
+import SyllabusPopup from "./components/SyllabusPopup";
+
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 const IEDGalaga = () => {
@@ -16,6 +18,7 @@ const IEDGalaga = () => {
     const [task, setTask] = useState(null);
     const [allTasks, setAllTasks] = useState([]);
     const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
+    const [showTasksPopup, setShowTasksPopup] = useState(false);
     const [files, setFiles] = useState({
         "main.rs": "// Write your Rust code here\n\nfn main() {\n    println!(\"Hello, Rust!\");\n}",
         "Cargo.toml": "[package]\nname = \"rust_project\"\nversion = \"0.1.0\"\nedition = \"2021\"\n\n[dependencies]\n",
@@ -151,9 +154,21 @@ const IEDGalaga = () => {
         return false;
     };
 
+    const handleSelectTask = (taskId, index) => {
+        fetchTaskById(taskId);
+        setCurrentTaskIndex(index);
+    };
+
+    const toggleTasksPopup = () => {
+        setShowTasksPopup(!showTasksPopup);
+    };
+
     return (
         <div style={{ display: "flex", flexDirection: "column", width: "100vw", height: "100vh", background: "black", overflow: "hidden" }}>
-            <AppBarCourse style={{ position: "fixed", top: 0, width: "100%", zIndex: 1000 }} />
+            <AppBarCourse
+                style={{ position: "fixed", top: 0, width: "100%", zIndex: 1000 }}
+                onShowTasks={toggleTasksPopup}
+            />
 
             <div style={{ display: "flex", width: "100%", height: "calc(100% - 64px - 60px)", marginTop: "80px", marginBottom: "64px", overflow: "hidden" }}>
                 <div style={{ width: `${instructionsWidth}%`, minWidth: "20%", height: "100%", display: "flex", backgroundColor: "#1e1e1e", borderRight: "1px solid #333" }}>
@@ -173,7 +188,25 @@ const IEDGalaga = () => {
                 </div>
             </div>
 
-            <BottomBar currentTaskIndex={currentTaskIndex} totalTasks={allTasks.length} taskTitle={task ? task.title : ""} onNext={handleNextTask} onBack={handlePreviousTask} isCurrentTaskCompleted={isCurrentTaskCompleted()} />
+            <BottomBar
+                currentTaskIndex={currentTaskIndex}
+                totalTasks={allTasks.length}
+                taskTitle={task ? task.title : ""}
+                onNext={handleNextTask}
+                onBack={handlePreviousTask}
+                isCurrentTaskCompleted={isCurrentTaskCompleted()}
+                onShowTasks={toggleTasksPopup}
+            />
+
+            {showTasksPopup && (
+                <SyllabusPopup
+                    tasks={allTasks}
+                    onClose={() => setShowTasksPopup(false)}
+                    currentTaskIndex={currentTaskIndex}
+                    onSelectTask={handleSelectTask}
+                    allTasks={allTasks}
+                />
+            )}
         </div>
     );
 };

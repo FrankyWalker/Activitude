@@ -2,15 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProfileButton from '../../../components/appbar_components/ProfileButton';
 import ProfilePopup from '../../../components/appbar_components/ProfilePopup';
-import SyiblesPopup from './SyiblesPopup';
 import { auth } from '../../../firebase/firebase';
-import wogo from '../../../assets/wogo.png'; // Adjust the path to your image location
+import wogo from '../../../assets/wogo.png';
 
-const AppBarCourse = () => {
+const AppBarCourse = ({ onShowTasks }) => {
     const [profileLetter, setProfileLetter] = useState('');
     const [userDetails, setUserDetails] = useState(null);
     const [showProfilePopup, setShowProfilePopup] = useState(false);
-    const [showSylbesPopup, setShowSylbesPopup] = useState(false);
 
     const navigate = useNavigate();
 
@@ -65,7 +63,7 @@ const AppBarCourse = () => {
                                 e.target.style.transform = 'scale(1)';
                                 e.target.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
                             }}
-                            onClick={() => setShowSylbesPopup(true)}
+                            onClick={onShowTasks}
                         >
                             Syllabus
                         </button>
@@ -86,7 +84,6 @@ const AppBarCourse = () => {
                     onClose={() => setShowProfilePopup(false)}
                 />
             )}
-            {showSylbesPopup && <SyiblesPopup onClose={() => setShowSylbesPopup(false)} />}
         </>
     );
 };

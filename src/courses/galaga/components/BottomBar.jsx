@@ -73,7 +73,7 @@ const BottomBar = ({ currentTaskIndex, totalTasks, taskTitle, onNext, onBack, is
         <StyledBottomBar>
             <TaskStatus>
                 {totalTasks > 0
-                    ? `Current Task: ${taskTitle || ""} (${currentTaskIndex + 1}/${totalTasks})${!isCurrentTaskCompleted ? " - Not Completed" : ""}`
+                    ? `${taskTitle || ""} (${currentTaskIndex + 1}/${totalTasks})${!isCurrentTaskCompleted ? "" : ""}`
                     : "Loading tasks..."}
             </TaskStatus>
             <ButtonContainer>

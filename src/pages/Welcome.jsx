@@ -179,7 +179,7 @@ const Welcome = () => {
                 position: 'relative',
                 zIndex: 1
             }}>
-                <div>© {new Date().getFullYear()} <span style={{ color: '#ff7700' }}>CypherBloom</span></div>
+                <div>© {new Date().getFullYear()} <span style={{ color: '#ff7700' }}>Activitude</span></div>
                 <div style={{
                     display: 'flex',
                     gap: '30px'

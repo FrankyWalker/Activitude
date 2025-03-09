@@ -1,8 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
-import Terminal from '../courses/galaga/components/Terminal'; // Ensure it's correctly linked to your project
+import Terminal from '../courses/galaga/components/Terminal';
 
-// Styled component for black background
 const PlaygroundContainer = styled.div`
     background-color: black;
     height: 100vh;
