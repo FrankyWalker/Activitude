@@ -18,6 +18,7 @@
     "@uiw/react-codemirror": "^4.23.8",
     "axios": "^1.8.1",
     "firebase": "^11.3.1",
+    "firestore": "^1.1.6",
     "framer-motion": "^12.4.7",
     "lucide-react": "^0.477.0",
     "react": "^19.0.0",

@@ -1,32 +1,43 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 
-const Instructions = ({ tasks }) => {
-    const [progress, setProgress] = useState(0);
-    const [firstUncompletedTask, setFirstUncompletedTask] = useState(null);
+const Instructions = ({ task, onTaskComplete }) => {
+    const [isCompleted, setIsCompleted] = useState(task?.completed || false);
 
+    // Reset isCompleted when the task changes
     useEffect(() => {
-        if (Array.isArray(tasks) && tasks.length > 0) {
-            calculateProgress(tasks);
-
-            const uncompleted = tasks.find((task) => !task.completed);
-            setFirstUncompletedTask(uncompleted || null);
+        if (task) {
+            setIsCompleted(task.completed || false);
         }
-    }, [tasks]);
+    }, [task]);
 
-    const calculateProgress = (tasks) => {
-        if (!Array.isArray(tasks) || tasks.length === 0) {
-            setProgress(0);
-            return;
+    const handleCompleteClick = () => {
+        if (!isCompleted) {
+            const newCompletedState = true;
+            setIsCompleted(newCompletedState);
+            if (onTaskComplete) {
+                onTaskComplete(task?.task_id, newCompletedState);
+            }
         }
-        const completedCount = tasks.filter((task) => task.completed).length;
-        const progressPercentage = (completedCount / tasks.length) * 100;
-        setProgress(progressPercentage);
     };
+
+    if (!task) {
+        return (
+            <div style={styles.container}>
+                <div style={styles.content}>
+                    <div style={styles.documentHeader}>
+                        <div style={styles.headerDecoration} />
+                        <h2 style={styles.subtitle}>Instructions</h2>
+                        <div style={styles.headerDecoration} />
+                    </div>
+                    <p style={styles.noTaskMessage}>No task selected.</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div style={styles.container}>
-
             <div style={styles.content}>
                 <div style={styles.documentHeader}>
                     <div style={styles.headerDecoration} />
@@ -34,49 +45,65 @@ const Instructions = ({ tasks }) => {
                     <div style={styles.headerDecoration} />
                 </div>
 
-                {firstUncompletedTask && (
-                    <div style={styles.highlightedTask}>
-                        <h3 style={styles.highlightedTitle}>Next Task:</h3>
-                        <p style={styles.highlightedText}>
-                            {firstUncompletedTask.task_name}
-                        </p>
+                <div style={styles.taskHeader}>
+                    <h2 style={styles.taskTitle}>{task.task_name}</h2>
+                    <div style={styles.completionContainer}>
+                        <div
+                            onClick={handleCompleteClick}
+                            style={styles.checkboxContainer}
+                        >
+                            <div style={{
+                                ...styles.checkbox,
+                                backgroundColor: isCompleted ? "#00FF00" : "transparent"
+                            }}>
+                                {isCompleted && <span style={styles.checkmark}>✓</span>}
+                            </div>
+                        </div>
+                        <div style={styles.completionText}>
+                            {isCompleted ? "Task completed!" : "Click when task is complete"}
+                        </div>
+                    </div>
+                </div>
+
+                <div style={styles.taskDescription}>
+                    <p>{task.description}</p>
+                </div>
+
+                {task.expected_output && (
+                    <div style={styles.section}>
+                        <h3 style={styles.sectionTitle}>
+                            <span style={styles.sectionIcon}>✓</span> Expected Output
+                        </h3>
+                        <div style={styles.codeBlock}>
+                            {task.expected_output.map((output, index) => (
+                                <div key={index} style={styles.outputLine}>{output}</div>
+                            ))}
+                        </div>
                     </div>
                 )}
 
-                <div style={styles.taskList}>
-                    {Array.isArray(tasks) && tasks.length > 0 ? (
-                        tasks.map((task, index) => (
-                            <React.Fragment key={task.task_id}>
-                                <div
-                                    style={{
-                                        ...styles.taskItem,
-                                        opacity: task.completed ? 0.8 : 1,
-                                    }}
-                                >
-                                    <div style={styles.taskContentWrapper}>
-                                        <span style={styles.taskNumber}>
-                                            {index + 1}.
-                                        </span>
-                                        <span style={styles.taskText}>
-                                            {task.task_name}
-                                        </span>
-                                        {task.completed && (
-                                            <span style={styles.checkmark}>
-                                                ✔
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                                {index < tasks.length - 1 && (
-                                    <div style={styles.taskSeparator} />
-                                )}
-                            </React.Fragment>
-                        ))
-                    ) : (
-                        <p style={styles.noTasksMessage}>
-                            No tasks available. Add some tasks to get started!
+                {task.starter_code && (
+                    <div style={styles.section}>
+                        <h3 style={styles.sectionTitle}>
+                            <span style={styles.sectionIcon}>💻</span> Implementation Tips
+                        </h3>
+                        <ul style={styles.tipsList}>
+                            <li>Remember to handle all edge cases mentioned in the description</li>
+                            <li>Your solution will be tested against the expected output</li>
+                            <li>Focus on writing clean, efficient code</li>
+                        </ul>
+                    </div>
+                )}
+
+                <div style={styles.helpSection}>
+                    <div style={styles.helpIcon}>💡</div>
+                    <div style={styles.helpContent}>
+                        <h4 style={styles.helpTitle}>Need Help?</h4>
+                        <p style={styles.helpText}>
+                            If you're stuck, try breaking down the problem into smaller steps.
+                            For this factorial implementation, consider how to handle special cases first.
                         </p>
-                    )}
+                    </div>
                 </div>
             </div>
         </div>
@@ -84,20 +111,16 @@ const Instructions = ({ tasks }) => {
 };
 
 Instructions.propTypes = {
-    tasks: PropTypes.arrayOf(
-        PropTypes.shape({
-            task_id: PropTypes.string.isRequired,
-            task_name: PropTypes.string.isRequired,
-            completed: PropTypes.bool.isRequired,
-        })
-    ),
+    task: PropTypes.shape({
+        task_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+        task_name: PropTypes.string,
+        description: PropTypes.string,
+        completed: PropTypes.bool,
+        expected_output: PropTypes.array,
+        starter_code: PropTypes.object
+    }),
+    onTaskComplete: PropTypes.func
 };
-
-Instructions.defaultProps = {
-    tasks: [],
-};
-
-export default Instructions;
 
 const styles = {
     container: {
@@ -109,16 +132,6 @@ const styles = {
         height: "100%",
         boxSizing: "border-box",
     },
-
-    title: {
-        margin: "10px 0",
-        color: "#FFF",
-        fontSize: "24px",
-        fontWeight: "500",
-        textAlign: "center",
-    },
-
-
     content: {
         padding: "20px",
         width: "100%",
@@ -143,67 +156,117 @@ const styles = {
         margin: 0,
         whiteSpace: "nowrap",
     },
-    highlightedTask: {
-        backgroundColor: "#333",
-        padding: "15px",
-        borderRadius: "6px",
+    taskHeader: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
         marginBottom: "20px",
     },
-    highlightedTitle: {
+    taskTitle: {
+        fontSize: "24px",
         color: "#FFF",
-        fontSize: "18px",
         margin: 0,
     },
-    highlightedText: {
-        fontSize: "16px",
-        color: "#FFF",
-        margin: "5px 0 0 0",
-    },
-    taskList: {
+    completionContainer: {
         display: "flex",
         flexDirection: "column",
-        width: "100%",
-        gap: "15px",
-    },
-    taskItem: {
-        backgroundColor: "#111",
-        borderRadius: "6px",
-        padding: "12px 15px",
-        display: "flex",
         alignItems: "center",
-        gap: "15px",
-        width: "100%",
-        boxSizing: "border-box",
+        gap: "8px",
     },
-    taskContentWrapper: {
-        flex: 1,
+    checkboxContainer: {
+        cursor: "pointer",
         display: "flex",
+        justifyContent: "center",
         alignItems: "center",
-        justifyContent: "space-between",
     },
-    taskNumber: {
-        color: "#FFF",
-        minWidth: "20px",
-    },
-    taskText: {
-        flex: 1,
-        fontSize: "16px",
-        color: "#FFF",
+    checkbox: {
+        width: "24px",
+        height: "24px",
+        border: "2px solid #00FF00",
+        borderRadius: "4px",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        transition: "background-color 0.2s ease",
     },
     checkmark: {
-        fontSize: "18px",
+        color: "#000",
+        fontSize: "16px",
         fontWeight: "bold",
-        color: "#00FF00",
-        marginLeft: "10px",
     },
-    taskSeparator: {
-        height: "1px",
-        backgroundColor: "#555",
-        margin: "10px 0",
+    completionText: {
+        fontSize: "14px",
+        color: "#AAA",
+        textAlign: "center",
     },
-    noTasksMessage: {
+    taskDescription: {
+        backgroundColor: "#111",
+        padding: "20px",
+        borderRadius: "6px",
+        marginBottom: "25px",
+        borderLeft: "4px solid #00bfff",
+    },
+    noTaskMessage: {
         textAlign: "center",
         color: "#777",
         marginTop: "20px",
     },
+    section: {
+        marginBottom: "25px",
+    },
+    sectionTitle: {
+        fontSize: "18px",
+        color: "#00bfff",
+        marginBottom: "15px",
+        display: "flex",
+        alignItems: "center",
+    },
+    sectionIcon: {
+        marginRight: "10px",
+        fontSize: "18px",
+    },
+    codeBlock: {
+        backgroundColor: "#1a1e2e",
+        padding: "15px",
+        borderRadius: "6px",
+        fontFamily: "monospace",
+        overflowX: "auto",
+        border: "1px solid #2a2e3e",
+    },
+    outputLine: {
+        padding: "5px 0",
+        color: "#00ff00",
+    },
+    tipsList: {
+        backgroundColor: "#1a1e2e",
+        padding: "15px 15px 15px 35px",
+        borderRadius: "6px",
+        border: "1px solid #2a2e3e",
+    },
+    helpSection: {
+        display: "flex",
+        backgroundColor: "#1e3a55",
+        borderRadius: "6px",
+        padding: "20px",
+        marginTop: "30px",
+        border: "1px solid #2a5980",
+    },
+    helpIcon: {
+        fontSize: "24px",
+        marginRight: "15px",
+    },
+    helpContent: {
+        flex: 1,
+    },
+    helpTitle: {
+        margin: "0 0 10px 0",
+        color: "#7cc5ff",
+        fontSize: "18px",
+    },
+    helpText: {
+        margin: 0,
+        lineHeight: "1.5",
+    }
 };
+
+export default Instructions;

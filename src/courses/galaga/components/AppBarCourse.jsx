@@ -67,7 +67,7 @@ const AppBarCourse = () => {
                             }}
                             onClick={() => setShowSylbesPopup(true)}
                         >
-                            Sylbes
+                            Syllabus
                         </button>
                     </div>
                     <div style={spacerStyles}></div>

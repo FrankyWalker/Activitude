@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import styled from "styled-components";
 
 const StyledBottomBar = styled.footer`
@@ -68,45 +68,24 @@ const BackButton = styled.button`
     }
 `;
 
-const BottomBar = () => {
-    const [tasks, setTasks] = useState([]);
-    const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
-
-    useEffect(() => {
-        const mockTasks = ["Task 1", "Task 2", "Task 3"];
-        setTasks(mockTasks);
-        setCurrentTaskIndex(0);
-    }, []);
-
-    const handleNext = () => {
-        if (currentTaskIndex < tasks.length - 1) {
-            setCurrentTaskIndex((prev) => prev + 1);
-        }
-    };
-
-    const handleBack = () => {
-        if (currentTaskIndex > 0) {
-            setCurrentTaskIndex((prev) => prev - 1);
-        }
-    };
-
+const BottomBar = ({ currentTaskIndex, totalTasks, taskTitle, onNext, onBack, isCurrentTaskCompleted }) => {
     return (
         <StyledBottomBar>
             <TaskStatus>
-                {tasks.length > 0
-                    ? `Current Task: ${tasks[currentTaskIndex] || ""} (${currentTaskIndex + 1}/${tasks.length})`
-                    : "No tasks available"}
+                {totalTasks > 0
+                    ? `Current Task: ${taskTitle || ""} (${currentTaskIndex + 1}/${totalTasks})${!isCurrentTaskCompleted ? " - Not Completed" : ""}`
+                    : "Loading tasks..."}
             </TaskStatus>
             <ButtonContainer>
                 <BackButton
-                    onClick={handleBack}
+                    onClick={onBack}
                     disabled={currentTaskIndex === 0}
                 >
                     Back
                 </BackButton>
                 <NextButton
-                    onClick={handleNext}
-                    disabled={currentTaskIndex === tasks.length - 1 || tasks.length === 0}
+                    onClick={onNext}
+                    disabled={currentTaskIndex === totalTasks - 1 || totalTasks === 0 || !isCurrentTaskCompleted}
                 >
                     Next
                 </NextButton>
