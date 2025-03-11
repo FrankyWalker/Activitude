@@ -38,7 +38,6 @@ const LoginPage = () => {
                 boxSizing: "border-box",
             }}
         >
-
             <button
                 onClick={() => navigate("/")}
                 style={{

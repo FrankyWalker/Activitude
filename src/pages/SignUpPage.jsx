@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { googleSignIn } from '../redux/authSlice';
+import { googleSignIn, signUpUser } from '../redux/authSlice';
 import { useNavigate } from 'react-router-dom';
 
 const SignUpPage = () => {
@@ -21,7 +21,7 @@ const SignUpPage = () => {
     };
 
     const handleEmailSignUp = () => {
-        console.log('Signing up with Email:', email, password);
+        dispatch(signUpUser({ email, password }));
     };
 
     return (
