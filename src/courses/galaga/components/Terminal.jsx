@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import styled from 'styled-components';
+import './terminal_components/Terminal.css';
 
 const RealTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Cargo.toml"]] }) => {
     const [terminals, setTerminals] = useState([{ id: 1, name: "Term", files: initialFiles[0] }]);
     const [activeTerminal, setActiveTerminal] = useState(1);
     const terminalRefs = useRef({});
     const wsRef = useRef(null);
+    const [isConnected, setIsConnected] = useState(false);
 
     const [processRunning, setProcessRunning] = useState({});
 
@@ -14,6 +15,11 @@ const RealTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Cargo.
     const [inputBuffer, setInputBuffer] = useState({});
     const [commandHistory, setCommandHistory] = useState({});
     const [historyIndex, setHistoryIndex] = useState({});
+
+
+    const MAX_RECONNECT_ATTEMPTS = 5; // Maximum number of reconnection attempts
+    const RECONNECT_INTERVAL_MS = 3000; // Interval between reconnect attempts (in milliseconds)
+    const [reconnectionAttempts, setReconnectionAttempts] = useState(0);
 
     useEffect(() => {
         const newHistory = { ...history };
@@ -26,8 +32,7 @@ const RealTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Cargo.
         terminals.forEach(terminal => {
             if (!newHistory[terminal.id]) {
                 newHistory[terminal.id] = [
-                    { type: 'output', text: 'Welcome to the Rust terminal!', className: 'terminal-welcome' },
-                    { type: 'output', text: terminal.files.join('  '), className: '' }
+                    { type: 'output', text: 'Welcome to the terminal!', className: 'terminal-welcome' },
                 ];
                 newCursorPosition[terminal.id] = 0;
                 newInputBuffer[terminal.id] = '';
@@ -46,55 +51,78 @@ const RealTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Cargo.
     }, [terminals]);
 
     useEffect(() => {
-        if (!wsRef.current) {
-            wsRef.current = new WebSocket('ws://localhost:8080');
+        const connectWebSocket = () => {
+            if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
+                wsRef.current = new WebSocket('ws://localhost:8080');
+                console.log('Attempting to connect to WebSocket...');
+                setIsConnected(false);
 
-            wsRef.current.onopen = () => {
-                console.log('Connected to WebSocket server');
-                addOutputToTerminal(activeTerminal, 'Connected to server', 'terminal-info');
-            };
+                wsRef.current.onopen = () => {
+                    console.log('Connected to WebSocket server');
+                    setIsConnected(true);
+                    setReconnectionAttempts(0); // Reset the reconnection attempts
+                };
 
-            wsRef.current.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-
-                if (data.output) {
-                    addOutputToTerminal(activeTerminal, data.output.trim(), 'terminal-success');
-                } else if (data.error) {
-                    addOutputToTerminal(activeTerminal, data.error.trim(), 'terminal-error');
-                } else if (data.status) {
-                    if (data.status.includes('Process exited') || data.status.includes('Rust process stopped')) {
-                        setProcessRunning(prev => ({ ...prev, [activeTerminal]: false }));
+                wsRef.current.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    if (data.output) {
+                        processOutputText(activeTerminal, data.output.trim());
+                    } else if (data.error) {
+                        addOutputToTerminal(activeTerminal, data.error.trim(), COLORS.ERROR);
+                    } else if (data.status) {
+                        if (
+                            data.status.includes('Process exited') ||
+                            data.status.includes('Rust process stopped')
+                        ) {
+                            setProcessRunning((prev) => ({ ...prev, [activeTerminal]: false }));
+                        }
+                        addOutputToTerminal(activeTerminal, data.status, COLORS.INFO);
                     }
-                    addOutputToTerminal(activeTerminal, data.status, 'terminal-info');
-                }
-            };
+                };
 
-            wsRef.current.onclose = () => {
-                console.log('Disconnected from WebSocket server');
-                addOutputToTerminal(activeTerminal, 'Disconnected from server', 'terminal-error');
-                setProcessRunning(prev => {
-                    const newState = { ...prev };
-                    Object.keys(newState).forEach(key => {
-                        newState[key] = false;
-                    });
-                    return newState;
-                });
-            };
+                wsRef.current.onclose = () => {
+                    console.log('Disconnected from WebSocket server');
+                    setIsConnected(false);
+                    setProcessRunning({});
+                    attemptReconnect();
+                };
 
-            wsRef.current.onerror = (error) => {
-                console.error('WebSocket error:', error);
-                addOutputToTerminal(activeTerminal, 'WebSocket error', 'terminal-error');
-            };
-        }
+                wsRef.current.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    setIsConnected(false);
+                    wsRef.current.close();
+                };
+            }
+        };
+
+        const attemptReconnect = () => {
+            if (reconnectionAttempts < MAX_RECONNECT_ATTEMPTS) {
+                setTimeout(() => {
+                    console.log(`Reconnecting... Attempt ${reconnectionAttempts + 1}`);
+                    setReconnectionAttempts((prev) => prev + 1);
+                    connectWebSocket();
+                }, RECONNECT_INTERVAL_MS);
+            } else {
+                console.error('Max reconnection attempts reached. Unable to reconnect.');
+                setIsConnected(false);
+                addOutputToTerminal(
+                    activeTerminal,
+                    'Failed to reconnect after multiple attempts.',
+                    COLORS.ERROR
+                );
+            }
+        };
+
+        connectWebSocket();
 
         return () => {
             if (wsRef.current) {
                 wsRef.current.close();
                 wsRef.current = null;
+                setIsConnected(false);
             }
         };
     }, [activeTerminal]);
-
     const COLORS = {
         PROMPT: 'terminal-prompt',
         RUST_FILE: 'terminal-rust-file',
@@ -105,6 +133,60 @@ const RealTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Cargo.
         WELCOME: 'terminal-welcome',
         INFO: 'terminal-info',
         UPDATE: 'terminal-update',
+    };
+
+    const processOutputText = (terminalId, text) => {
+
+        if (text.includes('Downloading') || text.includes('Installing') ||
+            text.includes('Compiling') || text.includes('Adding') ||
+            text.includes('Updating') || text.includes('Locking')) {
+
+
+            const lines = text.split('\n');
+
+            lines.forEach(line => {
+                if (line.trim() === '') return;
+
+                if (line.startsWith('Downloading') || line.startsWith('Installing') ||
+                    line.startsWith('Compiling') || line.startsWith('Adding') ||
+                    line.startsWith('Updating') || line.startsWith('Locking') ||
+                    line.startsWith('Downloaded') || line.startsWith('Finished') ||
+                    line.startsWith('Running')) {
+
+                    const firstSpaceIndex = line.indexOf(' ');
+
+                    if (firstSpaceIndex > 0) {
+                        const action = line.substring(0, firstSpaceIndex);
+                        const packageInfo = line.substring(firstSpaceIndex + 1);
+
+
+                        setHistory(prev => {
+                            const terminalHistory = [...(prev[terminalId] || [])];
+                            terminalHistory.push({
+                                type: 'installation',
+                                action: action,
+                                packageName: packageInfo
+                            });
+                            return { ...prev, [terminalId]: terminalHistory };
+                        });
+                    } else {
+                        addOutputToTerminal(terminalId, line, COLORS.SUCCESS);
+                    }
+                } else {
+
+                    addOutputToTerminal(terminalId, line);
+                }
+            });
+        } else {
+            addOutputToTerminal(terminalId, text, COLORS.SUCCESS);
+        }
+
+        setTimeout(() => {
+            if (terminalRefs.current[terminalId]) {
+                const element = terminalRefs.current[terminalId];
+                element.scrollTop = element.scrollHeight;
+            }
+        }, 10);
     };
 
     const addOutputToTerminal = (terminalId, text, className = '') => {
@@ -234,7 +316,7 @@ const RealTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Cargo.
         });
 
         if (command === 'ls') {
-            // List files
+
             const fileOutput = terminalFiles.map(file => ({
                 type: 'output',
                 text: file,
@@ -247,7 +329,7 @@ const RealTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Cargo.
             });
         }
         else if (command === 'clear') {
-            // Clear terminal
+
             setHistory(prev => ({ ...prev, [terminalId]: [] }));
         }
         else if (command === 'cargo run') {
@@ -261,10 +343,10 @@ const RealTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Cargo.
                     mainRs
                 }));
 
-                addOutputToTerminal(terminalId, "Running on server...", COLORS.INFO);
+                //  addOutputToTerminal(terminalId, "Running on server...", COLORS.INFO);
                 setProcessRunning(prev => ({ ...prev, [terminalId]: true }));
             } else {
-                addOutputToTerminal(terminalId, "WebSocket connection not established.", COLORS.ERROR);
+                // addOutputToTerminal(terminalId, "WebSocket connection not established.", COLORS.ERROR);
             }
         }
         else if (command.startsWith('cat ')) {
@@ -437,41 +519,43 @@ const RealTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Cargo.
     }, [activeTerminal]);
 
     return (
-        <Container>
-            <TerminalHeader>
-                <TerminalIconSection>
-                    <TerminalIconWrapper>
+        <div className="container">
+            <div className="terminal-header">
+                <div className="terminal-icon-section">
+                    <div className="terminal-icon-wrapper">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M4 17L10 11L4 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                             <path d="M12 19H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
-                    </TerminalIconWrapper>
-                    <DividerLine />
-                    <AddButtonWrapper onClick={addNewTerminal} title="New Terminal">
+                    </div>
+                    <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}></div>
+                    <div className="divider-line"></div>
+                    <button className="add-button-wrapper" onClick={addNewTerminal} title="New Terminal">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M12 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                             <path d="M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
-                    </AddButtonWrapper>
-                </TerminalIconSection>
+                    </button>
+                </div>
 
-                <TabsContainer>
+                <div className="tabs-container">
                     {terminals.map(terminal => (
-                        <Tab
+                        <div
                             key={terminal.id}
-                            active={terminal.id === activeTerminal}
+                            className={`tab ${terminal.id === activeTerminal ? 'active' : ''}`}
                             onClick={() => switchTerminal(terminal.id)}
                         >
-                            <TabInner active={terminal.id === activeTerminal}>
-                                <TerminalTabIcon>
+                            <div className={`tab-inner ${terminal.id === activeTerminal ? 'active' : ''}`}>
+                                <div className="terminal-tab-icon">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M4 17L10 11L4 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                         <path d="M12 19H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                     </svg>
-                                </TerminalTabIcon>
-                                <TabText>{terminal.name}</TabText>
+                                </div>
+                                <span className="tab-text">{terminal.name}</span>
                                 {terminals.length > 1 && (
-                                    <CloseButton
+                                    <button
+                                        className="close-button"
                                         onClick={(e) => closeTerminal(terminal.id, e)}
                                         title="Close Terminal"
                                     >
@@ -479,15 +563,15 @@ const RealTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Cargo.
                                             <path d="M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                             <path d="M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                         </svg>
-                                    </CloseButton>
+                                    </button>
                                 )}
-                            </TabInner>
-                        </Tab>
+                            </div>
+                        </div>
                     ))}
-                </TabsContainer>
-            </TerminalHeader>
+                </div>
+            </div>
 
-            <TerminalsContainer>
+            <div className="terminals-container">
                 {terminals.map(terminal => {
                     const terminalId = terminal.id;
                     const terminalHistory = history[terminalId] || [];
@@ -496,11 +580,12 @@ const RealTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Cargo.
                     const isProcessRunning = processRunning[terminalId];
 
                     return (
-                        <TerminalWrapper
+                        <div
                             key={terminalId}
-                            active={terminalId === activeTerminal}
+                            className={`terminal-wrapper ${terminalId === activeTerminal ? 'active' : ''}`}
                         >
-                            <TerminalContent
+                            <div
+                                className="terminal-content"
                                 ref={el => terminalRefs.current[terminalId] = el}
                                 tabIndex={0}
                                 onKeyDown={e => handleKeyDown(terminalId, e)}
@@ -508,319 +593,51 @@ const RealTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Cargo.
                                 {terminalHistory.map((item, index) => (
                                     <div key={index}>
                                         {item.type === 'command' ? (
-                                            <CommandLine>
-                                                <Prompt>{item.prompt || '$'}</Prompt>
-                                                <CommandText className={COLORS.COMMAND}>{item.text}</CommandText>
-                                            </CommandLine>
+                                            <div className="command-line">
+                                                <span className="prompt">{item.prompt || '$'}</span>
+                                                <span className={`command-text ${COLORS.COMMAND}`}>{item.text}</span>
+                                            </div>
+                                        ) : item.type === 'installation' ? (
+                                            <div className="output-line">
+                                                <span className="terminal-success">{item.action} </span>
+                                                <span>{item.packageName}</span>
+                                            </div>
                                         ) : (
-                                            <OutputLine className={item.className}>
+                                            <div className={`output-line ${item.className}`}>
                                                 {item.text}
-                                            </OutputLine>
+                                            </div>
                                         )}
                                     </div>
                                 ))}
 
 
                                 {!isProcessRunning && (
-                                    <CommandLine>
-                                        <Prompt>$</Prompt>
-                                        <InputLine>
+                                    <div className="command-line">
+                                        <span className="prompt">$</span>
+                                        <div className="input-line">
                                             <span className={COLORS.COMMAND}>
                                                 {buffer.substring(0, cursorPos)}
                                             </span>
 
-                                            <Cursor
-                                                active={terminalId === activeTerminal}
-                                                className={COLORS.COMMAND}
+                                            <span
+                                                className={`cursor ${terminalId === activeTerminal ? 'active' : ''} ${COLORS.COMMAND}`}
                                             >
                                                 {cursorPos < buffer.length ? buffer.charAt(cursorPos) : ' '}
-                                            </Cursor>
+                                            </span>
 
                                             <span className={COLORS.COMMAND}>
                                                 {buffer.substring(cursorPos + 1)}
                                             </span>
-                                        </InputLine>
-                                    </CommandLine>
+                                        </div>
+                                    </div>
                                 )}
-                            </TerminalContent>
-                        </TerminalWrapper>
+                            </div>
+                        </div>
                     );
                 })}
-            </TerminalsContainer>
-        </Container>
+            </div>
+        </div>
     );
 };
 
 export default RealTerminalComponent;
-
-const Container = styled.div`
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100vh;
-
-    background-color: #000000;
-    box-sizing: border-box;
-    font-family: 'Inter', 'Roboto', sans-serif;
-`;
-
-const TerminalHeader = styled.div`
-    display: flex;
-    align-items: center;
-    background-color: #1e1e1e;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    z-index: 5;
-`;
-
-const TerminalIconSection = styled.div`
-    display: flex;
-    align-items: center;
-    padding: 0 12px;
-    height: 48px;
-    border-right: 1px solid #333;
-`;
-
-const DividerLine = styled.div`
-    width: 1px;
-    height: 16px;
-    background-color: #333;
-    margin-left: 8px;
-    margin-right: 8px;
-    align-self: center;
-`;
-
-const TerminalIconWrapper = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #00aaff;
-    width: 32px;
-    height: 32px;
-`;
-
-const AddButtonWrapper = styled.button`
-    background: transparent;
-    border: none;
-    color: #aaa;
-    width: 32px;
-    height: 32px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    margin-left: 8px;
-
-    &:hover {
-        color: #fff;
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-`;
-
-const TabsContainer = styled.div`
-    display: flex;
-    height: 48px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    flex: 1;
-    &::-webkit-scrollbar {
-        height: 0;
-        display: none;
-    }
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-`;
-
-const Tab = styled.div`
-    height: 100%;
-    min-width: 130px;
-    max-width: 200px;
-    position: relative;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-
-    &:hover {
-        background-color: ${props => props.active ? 'transparent' : '#2a2a2a'};
-    }
-`;
-
-const TabInner = styled.div`
-    display: flex;
-    align-items: center;
-    height: 100%;
-    padding: 0 16px;
-    border-right: 1px solid #333;
-    background-color: ${props => props.active ? '#252526' : 'transparent'};
-    position: relative;
-
-    &:after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background-color: ${props => props.active ? '#00aaff' : 'transparent'};
-    }
-`;
-
-const TerminalTabIcon = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #00aaff;
-    margin-right: 8px;
-`;
-
-const TabText = styled.span`
-    color: #ccc;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex: 1;
-    font-size: 13px;
-    font-weight: 500;
-`;
-
-const CloseButton = styled.button`
-    background: transparent;
-    border: none;
-    color: #6e6e6e;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    margin-left: 8px;
-    width: 18px;
-    height: 18px;
-    border-radius: 3px;
-
-    &:hover {
-        color: #ff6b6b;
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-`;
-
-const TerminalsContainer = styled.div`
-    position: relative;
-    flex: 1;
-    overflow: hidden;
-    padding: 10px;
-`;
-
-const TerminalWrapper = styled.div`
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-    display: ${props => props.active ? 'block' : 'none'};
-`;
-
-const TerminalContent = styled.div`
-    width: 100%;
-    height: 100%;
-    padding: 10px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    color: white;
-    font-family: 'SF Mono', 'Roboto Mono', monospace;
-    font-size: 14px;
-    line-height: 1.5;
-    background-color: #000;
-    outline: none;
-
-    &::-webkit-scrollbar {
-        width: 8px;
-    }
-
-    &::-webkit-scrollbar-track {
-        background: #111;
-    }
-
-    &::-webkit-scrollbar-thumb {
-        background: #333;
-        border-radius: 4px;
-    }
-
-    .terminal-prompt {
-        color: #c678dd;
-        font-weight: bold;
-    }
-
-    .terminal-command {
-        color: #e5c07b;
-    }
-
-    .terminal-rust-file {
-        color: #ff8800;
-    }
-
-    .terminal-toml-file {
-        color: #98c379;
-    }
-
-    .terminal-success {
-        color: #4BB543;
-    }
-
-    .terminal-error {
-        color: #ff6b6b;
-    }
-
-    .terminal-welcome {
-        color: #61afef;
-        font-weight: bold;
-    }
-
-    .terminal-info {
-        color: #56b6c2;
-    }
-
-    .terminal-update {
-        color: #d19a66;
-    }
-`;
-
-const CommandLine = styled.div`
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    margin: 2px 0;
-`;
-
-const Prompt = styled.span`
-    color: #c678dd;
-    font-weight: bold;
-    margin-right: 8px;
-`;
-
-const CommandText = styled.span`
-    color: #e5c07b;
-`;
-
-const OutputLine = styled.div`
-    margin: 2px 0;
-    white-space: pre-wrap;
-    word-break: break-word;
-`;
-
-const InputLine = styled.div`
-    flex: 1;
-    min-height: 1em;
-    white-space: pre-wrap;
-    word-break: break-word;
-`;
-
-const Cursor = styled.span`
-    display: inline-block;
-    background-color: ${props => props.active ? '#00aaff' : 'transparent'};
-    color: #000;
-    animation: ${props => props.active ? 'blink 1s step-end infinite' : 'none'};
-
-    @keyframes blink {
-        0%, 100% { background-color: #00aaff; color: #000; }
-        50% { background-color: transparent; color: #e5c07b; }
-    }
-`;

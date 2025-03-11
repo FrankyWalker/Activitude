@@ -19,6 +19,7 @@ const IEDGalaga = () => {
     const [allTasks, setAllTasks] = useState([]);
     const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
     const [showTasksPopup, setShowTasksPopup] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [files, setFiles] = useState({
         "main.rs": "// Write your Rust code here\n\nfn main() {\n    println!(\"Hello, Rust!\");\n}",
         "Cargo.toml": "[package]\nname = \"rust_project\"\nversion = \"0.1.0\"\nedition = \"2021\"\n\n[dependencies]\n",
@@ -32,21 +33,89 @@ const IEDGalaga = () => {
                 fetchTasks(user.uid);
             } else {
                 console.error("User not authenticated");
+                setIsLoading(false);
             }
         });
     }, []);
 
+
+    useEffect(() => {
+        if (allTasks.length > 0 && currentTaskIndex >= 0 && currentTaskIndex < allTasks.length) {
+
+            const currentTask = allTasks[currentTaskIndex];
+            if (currentTask && (!task || task.task_id !== currentTask.task_id)) {
+
+                fetchTaskById(currentTask.task_id);
+            }
+        }
+    }, [currentTaskIndex, allTasks]);
+
     const fetchTasks = (uid) => {
+        setIsLoading(true);
         fetch(`http://localhost:8080/galaga/tasks?uuid=${uid}`)
             .then((res) => res.json())
             .then((data) => {
                 console.log("All tasks:", data);
                 setAllTasks(data);
                 if (data.length > 0) {
-                    fetchNextTask(uid);
+                    findCurrentProgressPosition(data, uid);
+                } else {
+                    setIsLoading(false);
                 }
             })
-            .catch((err) => console.error("Error fetching tasks:", err));
+            .catch((err) => {
+                console.error("Error fetching tasks:", err);
+                setIsLoading(false);
+            });
+    };
+
+    const findCurrentProgressPosition = (tasks, uid) => {
+        fetch(`http://localhost:8080/galaga/next_task?uuid=${uid}`)
+            .then((res) => res.json())
+            .then((data) => {
+                console.log("Fetched Next Task:", data);
+                if (data && data.task_id) {
+                    setTask(data);
+                    const index = tasks.findIndex((t) => t.task_id === data.task_id);
+                    if (index !== -1) {
+                        setCurrentTaskIndex(index);
+                    }
+                } else {
+                    const lastCompletedIndex = findLastCompletedTaskIndex(tasks);
+                    if (lastCompletedIndex !== -1) {
+                        setCurrentTaskIndex(lastCompletedIndex);
+                        fetchTaskById(tasks[lastCompletedIndex].task_id);
+                    } else {
+
+                        setCurrentTaskIndex(0);
+                        fetchTaskById(tasks[0].task_id);
+                    }
+                }
+                setIsLoading(false);
+            })
+            .catch((err) => {
+                console.error("Error fetching next task:", err);
+
+                const firstIncompleteIndex = tasks.findIndex(task => !task.completed);
+                if (firstIncompleteIndex !== -1) {
+                    setCurrentTaskIndex(firstIncompleteIndex);
+                    fetchTaskById(tasks[firstIncompleteIndex].task_id);
+                } else {
+
+                    setCurrentTaskIndex(tasks.length - 1);
+                    fetchTaskById(tasks[tasks.length - 1].task_id);
+                }
+                setIsLoading(false);
+            });
+    };
+
+    const findLastCompletedTaskIndex = (tasks) => {
+        for (let i = tasks.length - 1; i >= 0; i--) {
+            if (tasks[i].completed) {
+                return i;
+            }
+        }
+        return -1;
     };
 
     const fetchNextTask = (uid) => {
@@ -66,6 +135,8 @@ const IEDGalaga = () => {
     };
 
     const fetchTaskById = (taskId) => {
+        if (!userId) return;
+
         fetch(`http://localhost:8080/galaga/tasks/${taskId}?uuid=${userId}`)
             .then((res) => res.json())
             .then((data) => {
@@ -95,6 +166,13 @@ const IEDGalaga = () => {
                     ...prevTask,
                     completed: true,
                 }));
+
+                if (currentTaskIndex < allTasks.length - 1) {
+
+                    setTimeout(() => {
+                        handleNextTask();
+                    }, 500);
+                }
             })
             .catch((err) => console.error("Error marking task complete:", err));
     };
@@ -133,18 +211,18 @@ const IEDGalaga = () => {
 
     const handleNextTask = () => {
         if (currentTaskIndex < allTasks.length - 1 &&
-            (task && task.completed || allTasks[currentTaskIndex].completed)) {
+            (task?.completed || allTasks[currentTaskIndex]?.completed)) {
             const nextTaskId = allTasks[currentTaskIndex + 1].task_id;
-            fetchTaskById(nextTaskId);
             setCurrentTaskIndex(currentTaskIndex + 1);
+            fetchTaskById(nextTaskId);
         }
     };
 
     const handlePreviousTask = () => {
         if (currentTaskIndex > 0) {
             const prevTaskId = allTasks[currentTaskIndex - 1].task_id;
-            fetchTaskById(prevTaskId);
             setCurrentTaskIndex(currentTaskIndex - 1);
+            fetchTaskById(prevTaskId);
         }
     };
 
@@ -155,13 +233,34 @@ const IEDGalaga = () => {
     };
 
     const handleSelectTask = (taskId, index) => {
-        fetchTaskById(taskId);
         setCurrentTaskIndex(index);
+        fetchTaskById(taskId);
+        setShowTasksPopup(false);
     };
 
     const toggleTasksPopup = () => {
         setShowTasksPopup(!showTasksPopup);
     };
+
+    const getCurrentTaskInfo = () => {
+        const currentTask = task || (allTasks[currentTaskIndex] || {});
+        return {
+            title: currentTask.title || "",
+            isCompleted: isCurrentTaskCompleted(),
+            index: currentTaskIndex,
+            total: allTasks.length
+        };
+    };
+
+    const taskInfo = getCurrentTaskInfo();
+
+    if (isLoading) {
+        return (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", background: "#1e1e1e", color: "white" }}>
+                <div>Loading your progress...</div>
+            </div>
+        );
+    }
 
     return (
         <div style={{ display: "flex", flexDirection: "column", width: "100vw", height: "100vh", background: "black", overflow: "hidden" }}>
@@ -189,12 +288,12 @@ const IEDGalaga = () => {
             </div>
 
             <BottomBar
-                currentTaskIndex={currentTaskIndex}
-                totalTasks={allTasks.length}
-                taskTitle={task ? task.title : ""}
+                currentTaskIndex={taskInfo.index}
+                totalTasks={taskInfo.total}
+                taskTitle={taskInfo.title}
                 onNext={handleNextTask}
                 onBack={handlePreviousTask}
-                isCurrentTaskCompleted={isCurrentTaskCompleted()}
+                isCurrentTaskCompleted={taskInfo.isCompleted}
                 onShowTasks={toggleTasksPopup}
             />
 

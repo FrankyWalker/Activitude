@@ -111,7 +111,7 @@ const Welcome = () => {
                     </h1>
                     <div style={{
                         position: 'absolute',
-                        left: '-10px',
+                        left: '-25px',
                         top: '-10px',
                         right: '-10px',
                         bottom: '-10px',
@@ -134,7 +134,7 @@ const Welcome = () => {
                         lineHeight: '1.8'
                     }}
                 >
-                    LEARN <span style={{ color: '#ff7700', fontWeight: '600' }}>IT FASTER</span>. BECOME A <span style={{ color: '#ff7700', fontWeight: '600' }}>RUSTACEAN</span> 🦀.
+                    LEARN <span style={{ color: '#ff7700', fontWeight: '600' }}>**IT FASTER</span>. BECOME A <span style={{ color: '#ff7700', fontWeight: '600' }}>RUSTACEAN</span>.
                 </h2>
 
                 <button
