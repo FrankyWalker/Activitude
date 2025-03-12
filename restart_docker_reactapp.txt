@@ -1,0 +1,3 @@
+docker build -t react-nginx .
+
+docker run -d -p 80:80 react-nginx

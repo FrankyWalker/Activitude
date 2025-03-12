@@ -8,6 +8,7 @@ import HomePage from "./pages/Home";
 import ScreenTooSmallPage from "./pages/ScreenTooSmallPage";
 import IEDGalaga from "./courses/galaga/IEDGalaga";
 import Playground from "./pages/Playground";
+import DockerStatus from "./pages/Status";
 
 const PrivateRoute = ({ children }) => {
     const user = useSelector((state) => state.auth.user);
@@ -65,6 +66,7 @@ function AppRoutes() {
                 />
                 <Route path="*" element={<Navigate to="/" />} />
                 <Route path="/playground" element={<Playground />} />
+                <Route path="/dockerstatus" element={<DockerStatus />} />
             </Routes>
         </Router>
     );

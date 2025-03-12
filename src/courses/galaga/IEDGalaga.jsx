@@ -4,9 +4,7 @@ import CodeEditor from "./components/CodeEditor";
 import Output from "./components/Terminal";
 import AppBarCourse from "./components/AppBarCourse";
 import BottomBar from "./components/BottomBar";
-
 import SyllabusPopup from "./components/SyllabusPopup";
-
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 const IEDGalaga = () => {
@@ -38,13 +36,10 @@ const IEDGalaga = () => {
         });
     }, []);
 
-
     useEffect(() => {
         if (allTasks.length > 0 && currentTaskIndex >= 0 && currentTaskIndex < allTasks.length) {
-
             const currentTask = allTasks[currentTaskIndex];
             if (currentTask && (!task || task.task_id !== currentTask.task_id)) {
-
                 fetchTaskById(currentTask.task_id);
             }
         }
@@ -52,7 +47,7 @@ const IEDGalaga = () => {
 
     const fetchTasks = (uid) => {
         setIsLoading(true);
-        fetch(`http://localhost:8080/galaga/tasks?uuid=${uid}`)
+        fetch(`http://146.190.127.237:4000/galaga/tasks?uuid=${uid}`)
             .then((res) => res.json())
             .then((data) => {
                 console.log("All tasks:", data);
@@ -70,7 +65,7 @@ const IEDGalaga = () => {
     };
 
     const findCurrentProgressPosition = (tasks, uid) => {
-        fetch(`http://localhost:8080/galaga/next_task?uuid=${uid}`)
+        fetch(`http://146.190.127.237:4000/galaga/next_task?uuid=${uid}`)
             .then((res) => res.json())
             .then((data) => {
                 console.log("Fetched Next Task:", data);
@@ -86,7 +81,6 @@ const IEDGalaga = () => {
                         setCurrentTaskIndex(lastCompletedIndex);
                         fetchTaskById(tasks[lastCompletedIndex].task_id);
                     } else {
-
                         setCurrentTaskIndex(0);
                         fetchTaskById(tasks[0].task_id);
                     }
@@ -101,7 +95,6 @@ const IEDGalaga = () => {
                     setCurrentTaskIndex(firstIncompleteIndex);
                     fetchTaskById(tasks[firstIncompleteIndex].task_id);
                 } else {
-
                     setCurrentTaskIndex(tasks.length - 1);
                     fetchTaskById(tasks[tasks.length - 1].task_id);
                 }
@@ -109,6 +102,7 @@ const IEDGalaga = () => {
             });
     };
 
+    // Add the missing function definition here:
     const findLastCompletedTaskIndex = (tasks) => {
         for (let i = tasks.length - 1; i >= 0; i--) {
             if (tasks[i].completed) {
@@ -119,7 +113,7 @@ const IEDGalaga = () => {
     };
 
     const fetchNextTask = (uid) => {
-        fetch(`http://localhost:8080/galaga/next_task?uuid=${uid}`)
+        fetch(`http://146.190.127.237:4000/galaga/next_task?uuid=${uid}`)
             .then((res) => res.json())
             .then((data) => {
                 console.log("Fetched Next Task:", data);
@@ -137,7 +131,7 @@ const IEDGalaga = () => {
     const fetchTaskById = (taskId) => {
         if (!userId) return;
 
-        fetch(`http://localhost:8080/galaga/tasks/${taskId}?uuid=${userId}`)
+        fetch(`http://146.190.127.237:4000/galaga/tasks/${taskId}?uuid=${userId}`)
             .then((res) => res.json())
             .then((data) => {
                 console.log("Fetched Task:", data);
@@ -149,7 +143,7 @@ const IEDGalaga = () => {
     };
 
     const markTaskComplete = (taskId) => {
-        fetch(`http://localhost:8080/galaga/tasks/${taskId}/complete?uuid=${userId}`, {
+        fetch(`http://146.190.127.237:4000/galaga/tasks/${taskId}/complete?uuid=${userId}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ uuid: userId }),
@@ -168,7 +162,6 @@ const IEDGalaga = () => {
                 }));
 
                 if (currentTaskIndex < allTasks.length - 1) {
-
                     setTimeout(() => {
                         handleNextTask();
                     }, 500);

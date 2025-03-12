@@ -17,8 +17,8 @@ const RealTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Cargo.
     const [historyIndex, setHistoryIndex] = useState({});
 
 
-    const MAX_RECONNECT_ATTEMPTS = 5; // Maximum number of reconnection attempts
-    const RECONNECT_INTERVAL_MS = 3000; // Interval between reconnect attempts (in milliseconds)
+    const MAX_RECONNECT_ATTEMPTS = 5;
+    const RECONNECT_INTERVAL_MS = 3000;
     const [reconnectionAttempts, setReconnectionAttempts] = useState(0);
 
     useEffect(() => {
@@ -53,7 +53,7 @@ const RealTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Cargo.
     useEffect(() => {
         const connectWebSocket = () => {
             if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
-                wsRef.current = new WebSocket('ws://localhost:8080');
+                wsRef.current = new WebSocket('ws://146.190.127.237:4000');
                 console.log('Attempting to connect to WebSocket...');
                 setIsConnected(false);
 
@@ -343,10 +343,8 @@ const RealTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Cargo.
                     mainRs
                 }));
 
-                //  addOutputToTerminal(terminalId, "Running on server...", COLORS.INFO);
                 setProcessRunning(prev => ({ ...prev, [terminalId]: true }));
             } else {
-                // addOutputToTerminal(terminalId, "WebSocket connection not established.", COLORS.ERROR);
             }
         }
         else if (command.startsWith('cat ')) {
