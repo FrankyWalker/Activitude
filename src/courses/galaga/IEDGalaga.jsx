@@ -47,6 +47,7 @@ const IEDGalaga = () => {
 
     const fetchTasks = (uid) => {
         setIsLoading(true);
+        // 🚨IP ADDRESS
         fetch(`http://146.190.127.237:4000/galaga/tasks?uuid=${uid}`)
             .then((res) => res.json())
             .then((data) => {

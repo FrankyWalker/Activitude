@@ -39,7 +39,7 @@ const HomePage = () => {
             if (userUuid) {
                 try {
 
-                    const response = await fetch(`http://localhost:8080/galaga/tasks?uuid=${userUuid}`);
+                    const response = await fetch(`http://146.190.127.237:4000/galaga/tasks?uuid=${userUuid}`);
 
                     if (!response.ok) {
                         throw new Error(`HTTP error! Status: ${response.status}`);

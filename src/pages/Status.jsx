@@ -7,10 +7,8 @@ const DockerStatus = () => {
     const [error, setError] = useState(null);
     const [lastUpdated, setLastUpdated] = useState(null);
 
-    // API endpoint configuration
     const API_ENDPOINT = 'http://146.190.127.237:4000/docker/status';
 
-    // Custom styles
     const styles = {
         container: {
             minHeight: '100vh',
