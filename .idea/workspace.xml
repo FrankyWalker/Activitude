@@ -4,29 +4,10 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0762140b-86b2-4f6c-8ad8-58ef6aa06f6b" name="Changes" comment="Add React app structure with Firebase authentication setup&#10;&#10;This commit initializes the app with key components, Firebase configuration, and Redux state management for authentication. It includes a navigation bar, bottom bar, code editor, and user authentication logic using Firebase and Google Sign-In. Basic file infrastructure like gitignore, assets, and project settings has been added as well.">
+    <list default="true" id="0762140b-86b2-4f6c-8ad8-58ef6aa06f6b" name="Changes" comment="Update API endpoints to use production server IP&#10;&#10;Replaced localhost and outdated endpoint references with the correct production server IP (http://146.190.127.237:4000). This ensures consistent and reliable API communication across the application.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Routes.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/Routes.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/assets/cypherbloomtext.jpg" beforeDir="false" afterPath="$PROJECT_DIR$/src/assets/cypherbloomtext.jpg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/AppBar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/AppBar.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/Footer.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/Footer.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/courses/galaga/IEDGalaga.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/courses/galaga/IEDGalaga.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/courses/galaga/components/BottomBar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/courses/galaga/components/BottomBar.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/courses/galaga/components/CodeEditor.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/courses/galaga/components/CodeEditor.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/courses/galaga/components/Instruction.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/courses/galaga/components/Instruction.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/courses/galaga/components/Output.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/courses/galaga/components/Output.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/firebase/firebase.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/firebase/firebase.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/logo.svg" beforeDir="false" afterPath="$PROJECT_DIR$/src/logo.svg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pages/Home.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/Home.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pages/LoginPage.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/LoginPage.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pages/ScreenTooSmallPage.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/ScreenTooSmallPage.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pages/SignUpPage.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/SignUpPage.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pages/Welcome.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/Welcome.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/redux/authSlice.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/redux/authSlice.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/redux/store.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/redux/store.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/courses/galaga/components/Terminal.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/courses/galaga/components/Terminal.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -44,8 +25,8 @@
 }</component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/GandalfTheGrey-DEV/CypherBloom.git&quot;,
-    &quot;accountId&quot;: &quot;5efb7ae6-588e-40e7-8fd9-6aa77893b669&quot;
+    &quot;url&quot;: &quot;https://github.com/GandalfTheGrey-DEV/Activitude.git&quot;,
+    &quot;accountId&quot;: &quot;105191c3-9447-42a1-b155-fbe4b9d72fd1&quot;
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
@@ -68,17 +49,48 @@
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/frank/Desktop/cypherbloom&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/root/Activitude&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
     &quot;org.rust.first.attach.projects&quot;: &quot;true&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;/Applications/RustRover.app/Contents/plugins/javascript-plugin/jsLanguageServicesImpl/external&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;/root/.cache/JetBrains/RemoteDev/dist/6b947e3d7aaab_RustRover-251.23774.2/plugins/javascript-plugin/jsLanguageServicesImpl/external&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
+  <component name="RdControllerToolWindowsLayoutState" isNewUi="true">
+    <layout>
+      <window_info id="Bookmarks" side_tool="true" />
+      <window_info id="Merge Requests" />
+      <window_info id="Commit_Guest" show_stripe_button="false" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.12050781" />
+      <window_info id="Commit" order="1" weight="0.3298828" />
+      <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
+      <window_info id="Pull Requests" order="3" weight="0.3298828" />
+      <window_info anchor="bottom" id="NextEditPredictionSettingsToolwindow" />
+      <window_info anchor="bottom" id="Database Changes" />
+      <window_info anchor="bottom" id="TypeScript" />
+      <window_info anchor="bottom" id="TODO" />
+      <window_info anchor="bottom" id="File Transfer" />
+      <window_info anchor="bottom" id="Version Control" order="0" />
+      <window_info anchor="bottom" id="Problems" order="1" />
+      <window_info anchor="bottom" id="Problems View" order="2" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="3" visible="true" weight="0.10729167" />
+      <window_info anchor="bottom" id="Services" order="4" />
+      <window_info anchor="right" id="PR AI Assistant" />
+      <window_info anchor="right" id="Coverage" side_tool="true" />
+      <window_info anchor="right" content_ui="combo" id="Notifications" order="0" weight="0.25" />
+      <window_info anchor="right" id="AIAssistant" order="1" weight="0.3298828" />
+      <window_info anchor="right" id="Database" order="2" weight="0.25" />
+      <window_info anchor="right" id="Gradle" order="3" weight="0.25" />
+      <window_info anchor="right" id="Maven" order="4" weight="0.25" />
+      <window_info anchor="right" id="Cargo" order="5" weight="0.2" />
+      <window_info anchor="right" id="RustCargo" order="6" weight="0.2" />
+    </layout>
+  </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/src/courses/galaga" />
@@ -115,7 +127,18 @@
       <workItem from="1741015709918" duration="34000" />
       <workItem from="1741028970034" duration="774000" />
       <workItem from="1741029748938" duration="1999000" />
+      <workItem from="1741812837489" duration="1387000" />
+      <workItem from="1742139502372" duration="45000" />
     </task>
+    <task id="LOCAL-00001" summary="Update API endpoints to use production server IP&#10;&#10;Replaced localhost and outdated endpoint references with the correct production server IP (http://146.190.127.237:4000). This ensures consistent and reliable API communication across the application.">
+      <option name="closed" value="true" />
+      <created>1741812986886</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1741812986886</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -143,6 +166,11 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <option name="LAST_COMMIT_MESSAGE" value="" />
+    <MESSAGE value="Update API endpoints to use production server IP&#10;&#10;Replaced localhost and outdated endpoint references with the correct production server IP (http://146.190.127.237:4000). This ensures consistent and reliable API communication across the application." />
+    <option name="LAST_COMMIT_MESSAGE" value="Update API endpoints to use production server IP&#10;&#10;Replaced localhost and outdated endpoint references with the correct production server IP (http://146.190.127.237:4000). This ensures consistent and reliable API communication across the application." />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
 </project>

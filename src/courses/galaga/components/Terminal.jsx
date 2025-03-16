@@ -134,7 +134,7 @@ const EnhancedTerminal = () => {
         if (!userId) return;
 
         setIsConnecting(true); // Always start the loading animation
-        const ws = new WebSocket("ws://localhost:3001");
+        const ws = new WebSocket("ws://146.190.127.237:3001");
         socketRef.current = ws;
 
         const connectionTimeout = setTimeout(() => {

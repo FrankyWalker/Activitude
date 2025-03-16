@@ -97,7 +97,8 @@ const CodeEditor = ({ onFilesChange, clientUUID }) => {
 
     useEffect(() => {
         const connectWebSocket = () => {
-            const socket = new WebSocket("ws://localhost:3001");
+            const socket = new WebSocket("ws://146.190.127.237:3001");
+
             setWsInstance(socket);
 
             socket.onopen = () => {
