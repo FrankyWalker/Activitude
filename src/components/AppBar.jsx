@@ -46,20 +46,20 @@ const AppBar = () => {
                         />
                     </div>
                     <div style={navLinksContainer}>
-                        <button
-                            style={navButtonStyle}
-                            onClick={() => navigate('/dockerstatus')}
-                            onMouseEnter={(e) => {
-                                e.target.style.color = '#ff7700';
-                                e.target.style.borderBottom = '2px solid #ff7700';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.target.style.color = '#ffffff';
-                                e.target.style.borderBottom = '2px solid transparent';
-                            }}
-                        >
-                            docker
-                        </button>
+                        {/*<button*/}
+                        {/*    style={navButtonStyle}*/}
+                        {/*    onClick={() => navigate('/dockerstatus')}*/}
+                        {/*    onMouseEnter={(e) => {*/}
+                        {/*        e.target.style.color = '#ff7700';*/}
+                        {/*        e.target.style.borderBottom = '2px solid #ff7700';*/}
+                        {/*    }}*/}
+                        {/*    onMouseLeave={(e) => {*/}
+                        {/*        e.target.style.color = '#ffffff';*/}
+                        {/*        e.target.style.borderBottom = '2px solid transparent';*/}
+                        {/*    }}*/}
+                        {/*>*/}
+                        {/*    docker*/}
+                        {/*</button>*/}
                         <button
                             style={navButtonStyle}
                             onClick={() => navigate('/playground')}

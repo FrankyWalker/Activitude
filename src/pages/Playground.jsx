@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Code, Terminal as TerminalIcon, PanelLeft, Rows } from 'lucide-react';
 import Terminal from '../courses/galaga/components/Terminal';
 import CodeEditor from '../courses/galaga/components/CodeEditor';
+import { useNavigate } from 'react-router-dom';
 
 const APP_BAR_HEIGHT = 70;
 
@@ -24,13 +25,6 @@ const AppBar = styled.div`
     padding: 0 16px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     border-bottom: 2px solid #ff4500;
-`;
-
-const Title = styled.div`
-    color: #e0e0e0;
-    font-size: 16px;
-    font-weight: 600;
-    margin-right: auto;
 `;
 
 const IconButton = styled.button`
@@ -56,7 +50,7 @@ const ContentContainer = styled.div`
     display: flex;
     flex-direction: ${props => props.isHorizontal ? 'row' : 'column'};
     overflow: hidden;
-    height: calc(100vh - ${APP_BAR_HEIGHT}px); 
+    height: calc(100vh - ${APP_BAR_HEIGHT}px);
 `;
 
 const EditorContainer = styled.div`
@@ -75,9 +69,8 @@ const TerminalContainer = styled.div`
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding: 6px; 
+    padding: 6px;
 `;
-
 
 const HorizontalSlider = styled.div`
     width: 6px;
@@ -107,7 +100,33 @@ const VerticalSlider = styled.div`
     }
 `;
 
+const BackButton = styled.button`
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    font-size: 20px;
+    padding: 10px 15px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: auto;
+
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+        transform: scale(1.1);
+    }
+
+    &:active {
+        background-color: rgba(255, 255, 255, 0.1);
+        transform: scale(1);
+    }
+`;
+
 const Playground = () => {
+    const navigate = useNavigate();
     const [isHorizontal, setIsHorizontal] = useState(true);
     const [isDragging, setIsDragging] = useState(false);
     const [size, setSize] = useState(isHorizontal ? window.innerWidth / 2 : (window.innerHeight - APP_BAR_HEIGHT) / 2);
@@ -136,7 +155,6 @@ const Playground = () => {
 
     const toggleLayout = (horizontal) => {
         setIsHorizontal(horizontal);
-
         setSize(horizontal ? window.innerWidth / 2 : (window.innerHeight - APP_BAR_HEIGHT) / 2);
     };
 
@@ -158,7 +176,9 @@ const Playground = () => {
     return (
         <PlaygroundContainer>
             <AppBar>
-                <Title>Code Playground</Title>
+                <BackButton onClick={() => navigate("/")} title="Go back">
+                    ⬅
+                </BackButton>
                 <IconButton
                     active={isHorizontal}
                     onClick={() => toggleLayout(true)}
