@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 
 const Instructions = ({ task, onTaskComplete }) => {
     const [isCompleted, setIsCompleted] = useState(task?.completed || false);
+    const [copySuccess, setCopySuccess] = useState(false);
 
     // Reset isCompleted when the task changes
     useEffect(() => {
@@ -19,6 +20,13 @@ const Instructions = ({ task, onTaskComplete }) => {
                 onTaskComplete(task?.task_id, newCompletedState);
             }
         }
+    };
+
+    const handleCopyCommand = (command) => {
+        navigator.clipboard.writeText(command).then(() => {
+            setCopySuccess(true);
+            setTimeout(() => setCopySuccess(false), 2000);
+        });
     };
 
     if (!task) {
@@ -69,6 +77,26 @@ const Instructions = ({ task, onTaskComplete }) => {
                     <p>{task.description}</p>
                 </div>
 
+                <div style={styles.section}>
+                    <h3 style={styles.sectionTitle}>
+                        <span style={styles.sectionIcon}></span> Commands to Run
+                    </h3>
+                    <div style={styles.commandsContainer}>
+                        {task.commands_to_run && task.commands_to_run.map((command, index) => (
+                            <div key={index} style={styles.commandBox}>
+                                <code style={styles.commandText}>{command}</code>
+                                <div
+                                    onClick={() => handleCopyCommand(command)}
+                                    style={styles.copyIcon}
+                                    title="Copy to clipboard"
+                                >
+                                    {copySuccess && index === 0 ? "✓" : "📋"}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
                 {task.expected_output && (
                     <div style={styles.section}>
                         <h3 style={styles.sectionTitle}>
@@ -117,7 +145,8 @@ Instructions.propTypes = {
         description: PropTypes.string,
         completed: PropTypes.bool,
         expected_output: PropTypes.array,
-        starter_code: PropTypes.object
+        starter_code: PropTypes.object,
+        commands_to_run: PropTypes.array
     }),
     onTaskComplete: PropTypes.func
 };
@@ -226,6 +255,41 @@ const styles = {
     sectionIcon: {
         marginRight: "10px",
         fontSize: "18px",
+    },
+    // New styles for commands section
+    commandsContainer: {
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+    },
+    commandBox: {
+        backgroundColor: "#1a1e2e",
+        padding: "15px",
+        borderRadius: "6px",
+        fontFamily: "monospace",
+        border: "1px solid #2a2e3e",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+    commandText: {
+        color: "#ff9500",
+        fontSize: "14px",
+        margin: 0,
+        flexGrow: 1,
+    },
+    copyIcon: {
+        cursor: "pointer",
+        fontSize: "16px",
+        padding: "5px 10px",
+        backgroundColor: "#2a2e3e",
+        borderRadius: "4px",
+        transition: "background-color 0.2s ease",
+        marginLeft: "10px",
+        color: "#CCC",
+        "&:hover": {
+            backgroundColor: "#3a3e4e",
+        }
     },
     codeBlock: {
         backgroundColor: "#1a1e2e",
