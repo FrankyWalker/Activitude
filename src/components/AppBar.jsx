@@ -4,7 +4,7 @@ import { auth } from '../firebase/firebase';
 import ProfileButton from './appbar_components/ProfileButton';
 import AuthButtons from './appbar_components/AuthButtons';
 import ProfilePopup from './appbar_components/ProfilePopup';
-import WogoType from '../assets/wogo_type.png'; // Add this line to import the image
+import WogoType from '../assets/wogo_type.png';
 
 const AppBar = () => {
     const [profileLetter, setProfileLetter] = useState('');
@@ -40,10 +40,40 @@ const AppBar = () => {
                 <div style={navContainer}>
                     <div style={logoStyle} onClick={() => navigate('/home')}>
                         <img
-                            src={WogoType} // Use the imported image here
+                            src={WogoType}
                             alt="Logo"
-                            style={{ height: '50px' }} // Customize the size as needed
+                            style={{ height: '50px' }}
                         />
+                    </div>
+                    <div style={navLinksContainer}>
+                        <button
+                            style={navButtonStyle}
+                            onClick={() => navigate('/dockerstatus')}
+                            onMouseEnter={(e) => {
+                                e.target.style.color = '#ff7700';
+                                e.target.style.borderBottom = '2px solid #ff7700';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.color = '#ffffff';
+                                e.target.style.borderBottom = '2px solid transparent';
+                            }}
+                        >
+                            docker
+                        </button>
+                        <button
+                            style={navButtonStyle}
+                            onClick={() => navigate('/playground')}
+                            onMouseEnter={(e) => {
+                                e.target.style.color = '#ff7700';
+                                e.target.style.borderBottom = '2px solid #ff7700';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.color = '#ffffff';
+                                e.target.style.borderBottom = '2px solid transparent';
+                            }}
+                        >
+                            playground
+                        </button>
                     </div>
                     <div style={authContainer}>
                         {profileLetter ? (
@@ -83,16 +113,36 @@ const navContainer = {
 };
 
 const logoStyle = {
-    marginLeft: '-100px',
-    fontSize: '2rem', // You can remove this if using the image
     cursor: 'pointer',
+    marginLeft: '-70px',
+};
+
+const navLinksContainer = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    flex: 1,
+    gap: '2rem',
+    marginLeft: '150px',
+};
+
+const navButtonStyle = {
+    background: 'transparent',
+    border: 'none',
+    borderBottom: '2px solid transparent',
+    color: '#ffffff',
+    fontSize: '1rem',
+    fontWeight: '500',
+    padding: '0.5rem 0.2rem',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    textTransform: 'lowercase',
 };
 
 const authContainer = {
     display: 'flex',
     gap: '1rem',
     alignItems: 'center',
-    marginLeft: 'auto',
 };
 
 export default AppBar;

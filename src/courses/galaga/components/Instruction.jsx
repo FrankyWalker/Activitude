@@ -136,8 +136,10 @@ const styles = {
         padding: "20px",
         width: "100%",
         maxHeight: "100%",
-        overflowY: "auto",
+        overflowY: "scroll", // Ensure scrollable behavior
         boxSizing: "border-box",
+        scrollbarWidth: "none", // Hides scrollbar in Firefox
+        msOverflowStyle: "none", // Hides scrollbar in IE/Edge
     },
     documentHeader: {
         display: "flex",

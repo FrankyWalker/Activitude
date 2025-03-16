@@ -1,10 +1,12 @@
+// AppBarCourse.js
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProfileButton from '../../../components/appbar_components/ProfileButton';
 import ProfilePopup from '../../../components/appbar_components/ProfilePopup';
 import { auth } from '../../../firebase/firebase';
 import wogo from '../../../assets/wogo.png';
-
+import RunButton from '../../../components/RunButton';
 const AppBarCourse = ({ onShowTasks }) => {
     const [profileLetter, setProfileLetter] = useState('');
     const [userDetails, setUserDetails] = useState(null);
@@ -49,25 +51,14 @@ const AppBarCourse = ({ onShowTasks }) => {
                         </div>
                         <button
                             style={leftButton}
-                            onMouseOver={(e) => {
-                                e.target.style.color = '#ddd';
-                                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                                e.target.style.border = '2px solid #fff';
-                                e.target.style.transform = 'scale(1.05)';
-                                e.target.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.4)';
-                            }}
-                            onMouseOut={(e) => {
-                                e.target.style.color = '#fff';
-                                e.target.style.backgroundColor = 'transparent';
-                                e.target.style.border = '2px solid transparent';
-                                e.target.style.transform = 'scale(1)';
-                                e.target.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
-                            }}
                             onClick={onShowTasks}
                         >
                             Syllabus
                         </button>
                     </div>
+
+                    {/*<RunButton /> */}
+
                     <div style={spacerStyles}></div>
                     <div style={authContainer}>
                         <ProfileButton
@@ -88,7 +79,6 @@ const AppBarCourse = ({ onShowTasks }) => {
     );
 };
 
-// Styles
 const navStyles = {
     backgroundColor: '#050a18',
     position: 'fixed',
@@ -106,6 +96,7 @@ const navContainer = {
     maxWidth: '1900px',
     margin: '0 auto',
     padding: '0 1rem',
+    justifyContent: 'space-between',
 };
 
 const leftContainer = {

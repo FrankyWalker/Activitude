@@ -1,641 +1,632 @@
-import React, { useState, useRef, useEffect } from 'react';
-import './terminal_components/Terminal.css';
+import React, { useEffect, useRef, useState } from "react";
+import { Terminal } from "xterm";
+import { FitAddon } from "xterm-addon-fit";
+import "xterm/css/xterm.css";
+import { auth } from '../../../firebase/firebase';
+import { onAuthStateChanged } from "firebase/auth";
+import styled from "styled-components";
+import TerminalIcon from "@mui/icons-material/Terminal";
+import BashIcon from "@mui/icons-material/Terminal";
 
-const RealTerminalComponent = ({ files = {}, initialFiles = [["main.rs", "Cargo.toml"]] }) => {
-    const [terminals, setTerminals] = useState([{ id: 1, name: "Term", files: initialFiles[0] }]);
-    const [activeTerminal, setActiveTerminal] = useState(1);
-    const terminalRefs = useRef({});
-    const wsRef = useRef(null);
-    const [isConnected, setIsConnected] = useState(false);
+const colors = {
+    primary: "#ff4500",
+    secondary: "#ff6633",
+    background: "#050a18",
+    panelBackground: "#0a1428",
+    editorBackground: "#050a18",
+    panelBorder: "#15243b",
+    textPrimary: "#e0e0e0",
+    textSecondary: "#a0a0a0",
+    scrollbarThumb: "#253656",
+    hover: "#132039",
+    activeTabBorder: "#ff4500",
+    activeTabBackground: "#0a1428",
+};
 
-    const [processRunning, setProcessRunning] = useState({});
+const EnhancedTerminal = () => {
+    const terminalRef = useRef(null);
+    const containerRef = useRef(null);
+    const [terminalInstance, setTerminalInstance] = useState(null);
+    // const executeCommand = async (command) => {
+    //     if (!command) {
+    //         console.error("Invalid command: command is null or undefined");
+    //         return;
+    //     }
+    //
+    //     // Ensure command is a string
+    //     const commandStr = typeof command === 'string' ? command : String(command);
+    //
+    //     if (!userId) {
+    //         console.error("User not authenticated. Cannot execute command.");
+    //         if (terminalInstance) {
+    //             terminalInstance.write(`\r\n\x1b[31mError: Not authenticated. Cannot execute ${commandStr}\x1b[0m\r\n`);
+    //         }
+    //         return;
+    //     }
+    //
+    //     try {
+    //         if (terminalInstance) {
+    //             terminalInstance.write(`\r\n\x1b[33mExecuting: ${commandStr}\x1b[0m\r\n`);
+    //         }
+    //
+    //         // Make a call to the new REST API endpoint
+    //         const response = await fetch('http://localhost:3001/api/run-command', {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json'
+    //             },
+    //             body: JSON.stringify({
+    //                 clientId: userId,
+    //                 command: commandStr.trim()
+    //             })
+    //         });
+    //
+    //         const result = await response.json();
+    //
+    //         if (response.ok) {
+    //             // Display standard output
+    //             if (result.stdout && terminalInstance) {
+    //                 terminalInstance.write(`${result.stdout}`);
+    //             }
+    //
+    //             // Display errors if any
+    //             if (result.stderr && terminalInstance) {
+    //                 terminalInstance.write(`\x1b[31m${result.stderr}\x1b[0m`);
+    //             }
+    //
+    //             // Display exit code
+    //             if (terminalInstance) {
+    //                 const exitCodeColor = result.exitCode === 0 ? '32' : '31'; // Green for success, red for failure
+    //                 terminalInstance.write(`\r\n\x1b[${exitCodeColor}mCommand exited with code ${result.exitCode}\x1b[0m\r\n`);
+    //             }
+    //
+    //             return result;
+    //         } else {
+    //             // Handle error response from the API
+    //             console.error('Command execution failed:', result.error);
+    //             if (terminalInstance) {
+    //                 terminalInstance.write(`\r\n\x1b[31mError: ${result.error}\x1b[0m\r\n`);
+    //                 if (result.details) {
+    //                     terminalInstance.write(`\x1b[31m${result.details}\x1b[0m\r\n`);
+    //                 }
+    //             }
+    //         }
+    //     } catch (error) {
+    //         // Handle network or other errors
+    //         console.error("Failed to execute command:", error);
+    //         if (terminalInstance) {
+    //             terminalInstance.write(`\r\n\x1b[31mNetwork error: Could not connect to server\x1b[0m\r\n`);
+    //         }
+    //     }
+    // };
 
-    const [history, setHistory] = useState({});
-    const [cursorPosition, setCursorPosition] = useState({});
-    const [inputBuffer, setInputBuffer] = useState({});
-    const [commandHistory, setCommandHistory] = useState({});
-    const [historyIndex, setHistoryIndex] = useState({});
 
+    const [fitAddonInstance, setFitAddonInstance] = useState(null);
+    const [socket, setSocket] = useState(null);
+    const socketRef = useRef(null);
+    const resizeObserverRef = useRef(null);
+    const [userId, setUserId] = useState(null);
+    const [isConnecting, setIsConnecting] = useState(false);
+    const reconnectionTimerRef = useRef(null);
 
-    const MAX_RECONNECT_ATTEMPTS = 5;
-    const RECONNECT_INTERVAL_MS = 3000;
-    const [reconnectionAttempts, setReconnectionAttempts] = useState(0);
+    const darkBlue = "#0A1929";
+    const redOrange = "#FF4500";
+    const folderColor = "#36D399";
+    const fileColor = "#6C63FF";
+    const commandColor = "#FFD700";
 
+    const handleResize = () => {
+        if (fitAddonInstance && terminalInstance) {
+            fitAddonInstance.fit();
+
+            if (socketRef.current &&
+                socketRef.current.readyState === WebSocket.OPEN) {
+                socketRef.current.send(JSON.stringify({
+                    type: 'resize',
+                    cols: terminalInstance.cols,
+                    rows: terminalInstance.rows
+                }));
+            }
+        }
+    };
+
+    const connectWebSocket = () => {
+        if (!userId) return;
+
+        setIsConnecting(true); // Always start the loading animation
+        const ws = new WebSocket("ws://localhost:3001");
+        socketRef.current = ws;
+
+        const connectionTimeout = setTimeout(() => {
+            if (ws.readyState !== WebSocket.OPEN) {
+                console.error("Connection timed out");
+                ws.close(); // Force close if timeout occurs
+            }
+        }, 5000); // 5-second timeout
+
+        ws.onopen = () => {
+            console.log("Connected to terminal server");
+            setSocket(ws);
+            setIsConnecting(false); // Stop the loading animation on successful connection
+            clearTimeout(connectionTimeout); // Clear timeout to avoid triggering it unnecessarily
+
+            // Clear any existing reconnection timer
+            if (reconnectionTimerRef.current) {
+                clearInterval(reconnectionTimerRef.current);
+                reconnectionTimerRef.current = null;
+            }
+
+            // Send initial connection details
+            ws.send(
+                JSON.stringify({
+                    type: "connect",
+                    uuid: userId,
+                    cols: terminalInstance?.cols || 80,
+                    rows: terminalInstance?.rows || 24,
+                })
+            );
+        };
+
+        ws.onerror = (error) => {
+            console.error("WebSocket error:", error);
+            setIsConnecting(true); // Keep loading animation on error
+        };
+
+        ws.onclose = () => {
+            console.log("Disconnected from terminal server");
+            setSocket(null);
+            setIsConnecting(true); // Always show loading while disconnected
+
+            // Start reconnection process if not already running
+            if (!reconnectionTimerRef.current) {
+                console.log("Setting up reconnection timer");
+                reconnectionTimerRef.current = setInterval(() => {
+                    console.log("Attempting to reconnect...");
+                    connectWebSocket();
+                }, 3000); // Retry every 3 seconds
+            }
+        };
+    };
     useEffect(() => {
-        const newHistory = { ...history };
-        const newCursorPosition = { ...cursorPosition };
-        const newInputBuffer = { ...inputBuffer };
-        const newCommandHistory = { ...commandHistory };
-        const newHistoryIndex = { ...historyIndex };
-        const newProcessRunning = { ...processRunning };
-
-        terminals.forEach(terminal => {
-            if (!newHistory[terminal.id]) {
-                newHistory[terminal.id] = [
-                    { type: 'output', text: 'Welcome to the terminal!', className: 'terminal-welcome' },
-                ];
-                newCursorPosition[terminal.id] = 0;
-                newInputBuffer[terminal.id] = '';
-                newCommandHistory[terminal.id] = [];
-                newHistoryIndex[terminal.id] = -1;
-                newProcessRunning[terminal.id] = false;
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log("User authenticated:", user.uid);
+                setUserId(user.uid);
+            } else {
+                console.log("User not authenticated");
+                setUserId(null);
             }
         });
 
-        setHistory(newHistory);
-        setCursorPosition(newCursorPosition);
-        setInputBuffer(newInputBuffer);
-        setCommandHistory(newCommandHistory);
-        setHistoryIndex(newHistoryIndex);
-        setProcessRunning(newProcessRunning);
-    }, [terminals]);
+        return () => unsubscribe();
+    }, []);
 
     useEffect(() => {
-        const connectWebSocket = () => {
-            if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
-                wsRef.current = new WebSocket('ws://146.190.127.237:4000');
-                console.log('Attempting to connect to WebSocket...');
-                setIsConnected(false);
-
-                wsRef.current.onopen = () => {
-                    console.log('Connected to WebSocket server');
-                    setIsConnected(true);
-                    setReconnectionAttempts(0); // Reset the reconnection attempts
-                };
-
-                wsRef.current.onmessage = (event) => {
-                    const data = JSON.parse(event.data);
-                    if (data.output) {
-                        processOutputText(activeTerminal, data.output.trim());
-                    } else if (data.error) {
-                        addOutputToTerminal(activeTerminal, data.error.trim(), COLORS.ERROR);
-                    } else if (data.status) {
-                        if (
-                            data.status.includes('Process exited') ||
-                            data.status.includes('Rust process stopped')
-                        ) {
-                            setProcessRunning((prev) => ({ ...prev, [activeTerminal]: false }));
-                        }
-                        addOutputToTerminal(activeTerminal, data.status, COLORS.INFO);
-                    }
-                };
-
-                wsRef.current.onclose = () => {
-                    console.log('Disconnected from WebSocket server');
-                    setIsConnected(false);
-                    setProcessRunning({});
-                    attemptReconnect();
-                };
-
-                wsRef.current.onerror = (error) => {
-                    console.error('WebSocket error:', error);
-                    setIsConnected(false);
-                    wsRef.current.close();
-                };
-            }
-        };
-
-        const attemptReconnect = () => {
-            if (reconnectionAttempts < MAX_RECONNECT_ATTEMPTS) {
-                setTimeout(() => {
-                    console.log(`Reconnecting... Attempt ${reconnectionAttempts + 1}`);
-                    setReconnectionAttempts((prev) => prev + 1);
-                    connectWebSocket();
-                }, RECONNECT_INTERVAL_MS);
-            } else {
-                console.error('Max reconnection attempts reached. Unable to reconnect.');
-                setIsConnected(false);
-                addOutputToTerminal(
-                    activeTerminal,
-                    'Failed to reconnect after multiple attempts.',
-                    COLORS.ERROR
-                );
-            }
-        };
+        if (!userId) return;
 
         connectWebSocket();
 
         return () => {
-            if (wsRef.current) {
-                wsRef.current.close();
-                wsRef.current = null;
-                setIsConnected(false);
+            if (socketRef.current) {
+                socketRef.current.close();
+            }
+
+            if (reconnectionTimerRef.current) {
+                clearInterval(reconnectionTimerRef.current);
+                reconnectionTimerRef.current = null;
             }
         };
-    }, [activeTerminal]);
-    const COLORS = {
-        PROMPT: 'terminal-prompt',
-        RUST_FILE: 'terminal-rust-file',
-        TOML_FILE: 'terminal-toml-file',
-        COMMAND: 'terminal-command',
-        SUCCESS: 'terminal-success',
-        ERROR: 'terminal-error',
-        WELCOME: 'terminal-welcome',
-        INFO: 'terminal-info',
-        UPDATE: 'terminal-update',
-    };
+    }, [userId, terminalInstance]);
 
-    const processOutputText = (terminalId, text) => {
-
-        if (text.includes('Downloading') || text.includes('Installing') ||
-            text.includes('Compiling') || text.includes('Adding') ||
-            text.includes('Updating') || text.includes('Locking')) {
-
-
-            const lines = text.split('\n');
-
-            lines.forEach(line => {
-                if (line.trim() === '') return;
-
-                if (line.startsWith('Downloading') || line.startsWith('Installing') ||
-                    line.startsWith('Compiling') || line.startsWith('Adding') ||
-                    line.startsWith('Updating') || line.startsWith('Locking') ||
-                    line.startsWith('Downloaded') || line.startsWith('Finished') ||
-                    line.startsWith('Running')) {
-
-                    const firstSpaceIndex = line.indexOf(' ');
-
-                    if (firstSpaceIndex > 0) {
-                        const action = line.substring(0, firstSpaceIndex);
-                        const packageInfo = line.substring(firstSpaceIndex + 1);
-
-
-                        setHistory(prev => {
-                            const terminalHistory = [...(prev[terminalId] || [])];
-                            terminalHistory.push({
-                                type: 'installation',
-                                action: action,
-                                packageName: packageInfo
-                            });
-                            return { ...prev, [terminalId]: terminalHistory };
-                        });
-                    } else {
-                        addOutputToTerminal(terminalId, line, COLORS.SUCCESS);
-                    }
-                } else {
-
-                    addOutputToTerminal(terminalId, line);
-                }
-            });
-        } else {
-            addOutputToTerminal(terminalId, text, COLORS.SUCCESS);
-        }
-
-        setTimeout(() => {
-            if (terminalRefs.current[terminalId]) {
-                const element = terminalRefs.current[terminalId];
-                element.scrollTop = element.scrollHeight;
-            }
-        }, 10);
-    };
-
-    const addOutputToTerminal = (terminalId, text, className = '') => {
-        setHistory(prev => {
-            const terminalHistory = [...(prev[terminalId] || [])];
-            terminalHistory.push({ type: 'output', text, className });
-            return { ...prev, [terminalId]: terminalHistory };
-        });
-
-        setTimeout(() => {
-            if (terminalRefs.current[terminalId]) {
-                const element = terminalRefs.current[terminalId];
-                element.scrollTop = element.scrollHeight;
-            }
-        }, 10);
-    };
-
-    const addNewTerminal = () => {
-        const newId = terminals.length > 0 ? Math.max(...terminals.map(t => t.id)) + 1 : 1;
-        const fileSet = initialFiles[Math.min(terminals.length, initialFiles.length - 1)] || initialFiles[0];
-        setTerminals([...terminals, { id: newId, name: `Term ${newId}`, files: fileSet }]);
-        setActiveTerminal(newId);
-    };
-
-    const closeTerminal = (id, e) => {
-        e.stopPropagation();
-        if (terminals.length === 1) return;
-
-        if (processRunning[id]) {
-            stopProcess(id);
-        }
-
-        const newTerminals = terminals.filter(t => t.id !== id);
-        setTerminals(newTerminals);
-
-        if (activeTerminal === id) {
-            setActiveTerminal(newTerminals[0].id);
-        }
-
-        setHistory(prev => {
-            const newHistory = { ...prev };
-            delete newHistory[id];
-            return newHistory;
-        });
-
-        setCursorPosition(prev => {
-            const newPos = { ...prev };
-            delete newPos[id];
-            return newPos;
-        });
-
-        setInputBuffer(prev => {
-            const newBuffer = { ...prev };
-            delete newBuffer[id];
-            return newBuffer;
-        });
-
-        setCommandHistory(prev => {
-            const newCmdHistory = { ...prev };
-            delete newCmdHistory[id];
-            return newCmdHistory;
-        });
-
-        setHistoryIndex(prev => {
-            const newIndex = { ...prev };
-            delete newIndex[id];
-            return newIndex;
-        });
-
-        setProcessRunning(prev => {
-            const newProcessRunning = { ...prev };
-            delete newProcessRunning[id];
-            return newProcessRunning;
-        });
-    };
-
-    const switchTerminal = (id) => {
-        setActiveTerminal(id);
-        setTimeout(() => {
-            if (terminalRefs.current[id]) {
-                terminalRefs.current[id].focus();
-            }
-        }, 50);
-    };
-
-    const getFileColor = (filename) => {
-        if (filename.endsWith('.rs')) {
-            return COLORS.RUST_FILE;
-        } else if (filename.endsWith('.toml')) {
-            return COLORS.TOML_FILE;
-        }
-        return '';
-    };
-
-    const stopProcess = (terminalId) => {
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-            wsRef.current.send(JSON.stringify({
-                action: 'stop'
-            }));
-            addOutputToTerminal(terminalId, "^C", COLORS.ERROR);
-        }
-    };
-
-    const processCommand = (terminalId, command) => {
-
-        if (processRunning[terminalId]) {
-            return;
-        }
-
-        const terminalObj = terminals.find(t => t.id === terminalId);
-        const terminalFiles = terminalObj ? terminalObj.files : [];
-
-        setCommandHistory(prev => {
-            const newHistory = [...(prev[terminalId] || [])];
-            if (command.trim()) {
-                newHistory.push(command);
-            }
-            return { ...prev, [terminalId]: newHistory };
-        });
-
-        setHistoryIndex(prev => ({ ...prev, [terminalId]: -1 }));
-
-        setHistory(prev => {
-            const terminalHistory = [...(prev[terminalId] || [])];
-            terminalHistory.push({ type: 'command', text: command, prompt: '$' });
-            return { ...prev, [terminalId]: terminalHistory };
-        });
-
-        if (command === 'ls') {
-
-            const fileOutput = terminalFiles.map(file => ({
-                type: 'output',
-                text: file,
-                className: getFileColor(file)
-            }));
-
-            setHistory(prev => {
-                const terminalHistory = [...(prev[terminalId] || []), ...fileOutput];
-                return { ...prev, [terminalId]: terminalHistory };
-            });
-        }
-        else if (command === 'clear') {
-
-            setHistory(prev => ({ ...prev, [terminalId]: [] }));
-        }
-        else if (command === 'cargo run') {
-
-            if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-                const cargoToml = files['Cargo.toml'] || '';
-                const mainRs = files['main.rs'] || '';
-
-                wsRef.current.send(JSON.stringify({
-                    cargoToml,
-                    mainRs
-                }));
-
-                setProcessRunning(prev => ({ ...prev, [terminalId]: true }));
-            } else {
-            }
-        }
-        else if (command.startsWith('cat ')) {
-
-            const filename = command.substring(4).trim();
-            if (terminalFiles.includes(filename)) {
-                if (files[filename]) {
-                    addOutputToTerminal(terminalId, `${filename}:`, getFileColor(filename));
-
-                    files[filename].split('\n').forEach(line => {
-                        addOutputToTerminal(terminalId, line);
-                    });
-                } else {
-                    addOutputToTerminal(terminalId, `No content available for file: ${filename}`, COLORS.ERROR);
-                }
-            } else {
-                addOutputToTerminal(terminalId, `No such file or directory: ${filename}`, COLORS.ERROR);
-            }
-        }
-        else if (command === 'help') {
-
-            addOutputToTerminal(terminalId, "Available commands:", COLORS.INFO);
-            addOutputToTerminal(terminalId, "  ls            - List files");
-            addOutputToTerminal(terminalId, "  cat <file>    - Show file contents");
-            addOutputToTerminal(terminalId, "  cargo run     - Run the Rust program (executes on server)");
-            addOutputToTerminal(terminalId, "  clear         - Clear the terminal");
-            addOutputToTerminal(terminalId, "  help          - Show this help");
-            addOutputToTerminal(terminalId, "  Ctrl+C        - Stop running process");
-        }
-        else if (command.trim() === '') {
-        }
-        else {
-            addOutputToTerminal(terminalId, `Command not found: ${command}`, COLORS.ERROR);
-        }
-
-        setInputBuffer(prev => ({ ...prev, [terminalId]: '' }));
-
-        setTimeout(() => {
-            if (terminalRefs.current[terminalId]) {
-                const element = terminalRefs.current[terminalId];
-                element.scrollTop = element.scrollHeight;
-            }
-        }, 10);
-    };
-
-    const handleKeyDown = (terminalId, e) => {
-        if (e.ctrlKey && e.key === 'c') {
-            e.preventDefault();
-
-            if (processRunning[terminalId]) {
-                stopProcess(terminalId);
-                return;
-            } else {
-                addOutputToTerminal(terminalId, "^C", COLORS.ERROR);
-                setInputBuffer(prev => ({ ...prev, [terminalId]: '' }));
-                return;
-            }
-        }
-
-
-        if (processRunning[terminalId]) {
-            e.preventDefault();
-            return;
-        }
-
-        e.preventDefault();
-
-        const cmdHistory = commandHistory[terminalId] || [];
-        const index = historyIndex[terminalId] || -1;
-        const buffer = inputBuffer[terminalId] || '';
-
-        if (e.key === 'Enter') {
-            processCommand(terminalId, buffer);
-        }
-        else if (e.key === 'ArrowUp') {
-            if (cmdHistory.length > 0) {
-                const newIndex = index === -1
-                    ? cmdHistory.length - 1
-                    : Math.max(0, index - 1);
-
-                setHistoryIndex(prev => ({ ...prev, [terminalId]: newIndex }));
-                setInputBuffer(prev => ({ ...prev, [terminalId]: cmdHistory[newIndex] }));
-
-                setCursorPosition(prev => ({
-                    ...prev,
-                    [terminalId]: cmdHistory[newIndex].length
-                }));
-            }
-        }
-        else if (e.key === 'ArrowDown') {
-            if (index !== -1) {
-                const newIndex = index < cmdHistory.length - 1
-                    ? index + 1
-                    : -1;
-
-                setHistoryIndex(prev => ({ ...prev, [terminalId]: newIndex }));
-
-                const newCommand = newIndex === -1 ? '' : cmdHistory[newIndex];
-                setInputBuffer(prev => ({ ...prev, [terminalId]: newCommand }));
-
-                setCursorPosition(prev => ({
-                    ...prev,
-                    [terminalId]: newCommand.length
-                }));
-            }
-        }
-        else if (e.key === 'ArrowLeft') {
-            setCursorPosition(prev => ({
-                ...prev,
-                [terminalId]: Math.max(0, (prev[terminalId] || 0) - 1)
-            }));
-        }
-        else if (e.key === 'ArrowRight') {
-            setCursorPosition(prev => ({
-                ...prev,
-                [terminalId]: Math.min(buffer.length, (prev[terminalId] || 0) + 1)
-            }));
-        }
-        else if (e.key === 'Home') {
-            setCursorPosition(prev => ({ ...prev, [terminalId]: 0 }));
-        }
-        else if (e.key === 'End') {
-            setCursorPosition(prev => ({ ...prev, [terminalId]: buffer.length }));
-        }
-        else if (e.key === 'Backspace') {
-            const pos = cursorPosition[terminalId] || 0;
-            if (pos > 0) {
-                const newBuffer = buffer.substring(0, pos - 1) + buffer.substring(pos);
-                setInputBuffer(prev => ({ ...prev, [terminalId]: newBuffer }));
-                setCursorPosition(prev => ({ ...prev, [terminalId]: pos - 1 }));
-            }
-        }
-        else if (e.key === 'Delete') {
-            const pos = cursorPosition[terminalId] || 0;
-            if (pos < buffer.length) {
-                const newBuffer = buffer.substring(0, pos) + buffer.substring(pos + 1);
-                setInputBuffer(prev => ({ ...prev, [terminalId]: newBuffer }));
-            }
-        }
-        else if (e.key === 'Tab') {
-            if (buffer.startsWith('cat ')) {
-                const partialFilename = buffer.substring(4).trim();
-                const terminalObj = terminals.find(t => t.id === terminalId);
-                const terminalFiles = terminalObj ? terminalObj.files : [];
-
-                const matches = terminalFiles.filter(file =>
-                    file.startsWith(partialFilename) && file !== partialFilename
-                );
-
-                if (matches.length === 1) {
-                    const newBuffer = `cat ${matches[0]}`;
-                    setInputBuffer(prev => ({ ...prev, [terminalId]: newBuffer }));
-                    setCursorPosition(prev => ({ ...prev, [terminalId]: newBuffer.length }));
-                }
-            }
-        }
-        else if (e.key.length === 1) {
-            const pos = cursorPosition[terminalId] || 0;
-            const newBuffer = buffer.substring(0, pos) + e.key + buffer.substring(pos);
-            setInputBuffer(prev => ({ ...prev, [terminalId]: newBuffer }));
-            setCursorPosition(prev => ({ ...prev, [terminalId]: pos + 1 }));
-        }
-    };
 
     useEffect(() => {
-        const terminalElement = terminalRefs.current[activeTerminal];
-        if (terminalElement) {
-            terminalElement.focus();
-        }
-    }, [activeTerminal]);
+        const styleElement = document.createElement('style');
+        styleElement.textContent = `
+                .xterm .xterm-viewport::-webkit-scrollbar {
+                    width: 8px !important;
+                    background-color: ${darkBlue} !important;
+                }
+                .xterm .xterm-viewport::-webkit-scrollbar-thumb {
+                    background-color: ${colors.scrollbarThumb} !important;
+                    border-radius: 4px !important;
+                }
+                 .xterm .xterm-viewport {
+                     scrollbar-width: thin !important;
+                   scrollbar-color: ${colors.scrollbarThumb} ${darkBlue} !important;
+                }
+            `;
+        document.head.appendChild(styleElement);
+
+        if (terminalInstance) return;
+
+        const initTimeout = setTimeout(() => {
+            if (!terminalRef.current) return;
+
+            const term = new Terminal({
+                cursorBlink: true,
+                fontSize: 16,
+                fontFamily: '"Fira Code", Menlo, Monaco, "Courier New", monospace',
+                theme: {
+                    background: darkBlue,
+                    foreground: "#A5B9FF",
+                    cursor: redOrange,
+                    cursorAccent: "#FFFFFF",
+                    selection: "rgba(255, 69, 0, 0.3)",
+                    black: "#000000",
+                    red: "#FF4500",
+                    green: folderColor,
+                    yellow: commandColor,
+                    blue: fileColor,
+                    magenta: "#B14AFF",
+                    cyan: "#38BDF8",
+                    white: "#E0E0FF",
+                    brightBlack: "#686868",
+                    brightRed: "#FF5722",
+                    brightGreen: "#4ADE80",
+                    brightYellow: "#FFD700",
+                    brightBlue: "#6C63FF",
+                    brightMagenta: "#D946EF",
+                    brightCyan: "#22D3EE",
+                    brightWhite: "#FFFFFF",
+                },
+                allowTransparency: true,
+                scrollback: 5000,
+                smoothScrollDuration: 300,
+                scrollSensitivity: 1,
+            });
+
+            const fit = new FitAddon();
+            term.loadAddon(fit);
+
+            term.open(terminalRef.current);
+            fit.fit();
+
+            setTerminalInstance(term);
+            setFitAddonInstance(fit);
+
+            term.onKey(({ key, domEvent }) => {
+                if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+                    socketRef.current.send(JSON.stringify({
+                        type: 'input',
+                        data: key
+                    }));
+                }
+            });
+
+            term.focus();
+
+            if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN && userId) {
+                socketRef.current.send(JSON.stringify({
+                    type: 'connect',
+                    uuid: userId,
+                    cols: term.cols,
+                    rows: term.rows
+                }));
+            }
+
+            setTimeout(handleResize, 200);
+
+        }, 100);
+
+        return () => {
+            clearTimeout(initTimeout);
+            if (terminalInstance) {
+                terminalInstance.dispose();
+            }
+        };
+    }, [terminalInstance, userId]);
+
+
+    useEffect(() => {
+        if (!socket || !terminalInstance) return;
+
+        const handleSocketMessage = (event) => {
+            try {
+                const message = JSON.parse(event.data);
+
+                switch (message.type) {
+                    case 'output':
+                        terminalInstance.write(message.data);
+                        break;
+
+                    case 'connected':
+                        console.log(message.message);
+                        console.log('Terminal ID:', message.terminalId);
+
+                        terminalInstance.write(`\r\n\x1b[32mConnected to terminal server\x1b[0m\r\n`);
+                        if (message.dockerCreated) {
+                            terminalInstance.write(`\x1b[33mDocker container created for user: ${userId}\x1b[0m\r\n\r\n`);
+                        } else {
+                            terminalInstance.write(`\x1b[31mNo Docker container created. Please sign in to use Docker features.\x1b[0m\r\n\r\n`);
+                        }
+                        break;
+
+                    case 'error':
+                        console.error('Terminal error:', message.message, message.details);
+                        terminalInstance.write(`\r\n\x1b[31mError: ${message.message}\x1b[0m\r\n`);
+                        if (message.details) {
+                            terminalInstance.write(`\x1b[31m${message.details}\x1b[0m\r\n`);
+                        }
+                        break;
+
+                    case 'runOutput':
+                        terminalInstance.write(`\r\n${message.output}`);
+                        break;
+
+                    case 'runError':
+                        terminalInstance.write(`\r\n\x1b[31m${message.error}\x1b[0m`);
+                        break;
+
+                    case 'runStatus':
+                        terminalInstance.write(`\r\n\x1b[33m${message.status}\x1b[0m\r\n`);
+                        break;
+
+                    default:
+                        console.log('Unknown message type:', message.type);
+                }
+            } catch (err) {
+                console.error('Failed to parse message:', err);
+            }
+        };
+
+        socket.addEventListener('message', handleSocketMessage);
+
+        return () => {
+            socket.removeEventListener('message', handleSocketMessage);
+        };
+    }, [socket, terminalInstance, userId]);
+
+    useEffect(() => {
+        if (!fitAddonInstance || !containerRef.current) return;
+
+        window.addEventListener("resize", handleResize);
+
+        resizeObserverRef.current = new ResizeObserver(entries => {
+            handleResize();
+        });
+
+        resizeObserverRef.current.observe(containerRef.current);
+
+        const mutationObserver = new MutationObserver(handleResize);
+        mutationObserver.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['style', 'class']
+        });
+
+        const resizeInterval = setInterval(handleResize, 1000);
+
+        return () => {
+            window.removeEventListener("resize", handleResize);
+            if (resizeObserverRef.current) {
+                resizeObserverRef.current.disconnect();
+            }
+            mutationObserver.disconnect();
+            clearInterval(resizeInterval);
+        };
+    }, [fitAddonInstance, terminalInstance]);
 
     return (
-        <div className="container">
-            <div className="terminal-header">
-                <div className="terminal-icon-section">
-                    <div className="terminal-icon-wrapper">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M4 17L10 11L4 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M12 19H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                    </div>
-                    <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}></div>
-                    <div className="divider-line"></div>
-                    <button className="add-button-wrapper" onClick={addNewTerminal} title="New Terminal">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                    </button>
+        <StyledTerminalContainer>
+            <FileTabs>
+                <StaticFolderContainer>
+                    <BashIcon style={{ fontSize: "24px", opacity: 0.7 }} />
+                </StaticFolderContainer>
+                <FileTab active={true}>
+                    <FileIconWrapper>
+                        <TerminalIcon style={{ fontSize: "20px" }} />
+                    </FileIconWrapper>
+                    <span>terminal</span>
+                    {isConnecting && (
+                        <ConnectingIndicator>
+                            <LoadingDots>
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </LoadingDots>
+                            connecting
+                        </ConnectingIndicator>
+                    )}
+                </FileTab>
+            </FileTabs>
+
+            <TerminalContent>
+
+                <div
+                    ref={containerRef}
+                    className="w-full h-full"
+                    style={{
+                        background: darkBlue,
+                        width: "100%",
+                        height: "100%",
+                        overflow: "hidden",
+                        padding: "5px",
+                        boxSizing: "border-box"
+                    }}
+                >
+                    <div
+                        ref={terminalRef}
+                        className="w-full h-full"
+                        style={{
+                            width: "100%",
+                            height: "100%",
+                            padding: "0",
+                            position: "relative",
+                            overflow: "hidden",
+                            filter: isConnecting ? "blur(1px)" : "none",
+                            transition: "filter 0.3s ease"
+                        }}
+                    />
+                    {isConnecting && (
+                        <TerminalLoader>
+                            <LoadingSpinner/>
+                            <LoadingText>Connecting to terminal server...</LoadingText>
+                        </TerminalLoader>
+                    )}
                 </div>
-
-                <div className="tabs-container">
-                    {terminals.map(terminal => (
-                        <div
-                            key={terminal.id}
-                            className={`tab ${terminal.id === activeTerminal ? 'active' : ''}`}
-                            onClick={() => switchTerminal(terminal.id)}
-                        >
-                            <div className={`tab-inner ${terminal.id === activeTerminal ? 'active' : ''}`}>
-                                <div className="terminal-tab-icon">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M4 17L10 11L4 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                        <path d="M12 19H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    </svg>
-                                </div>
-                                <span className="tab-text">{terminal.name}</span>
-                                {terminals.length > 1 && (
-                                    <button
-                                        className="close-button"
-                                        onClick={(e) => closeTerminal(terminal.id, e)}
-                                        title="Close Terminal"
-                                    >
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                            <path d="M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                        </svg>
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className="terminals-container">
-                {terminals.map(terminal => {
-                    const terminalId = terminal.id;
-                    const terminalHistory = history[terminalId] || [];
-                    const buffer = inputBuffer[terminalId] || '';
-                    const cursorPos = cursorPosition[terminalId] || 0;
-                    const isProcessRunning = processRunning[terminalId];
-
-                    return (
-                        <div
-                            key={terminalId}
-                            className={`terminal-wrapper ${terminalId === activeTerminal ? 'active' : ''}`}
-                        >
-                            <div
-                                className="terminal-content"
-                                ref={el => terminalRefs.current[terminalId] = el}
-                                tabIndex={0}
-                                onKeyDown={e => handleKeyDown(terminalId, e)}
-                            >
-                                {terminalHistory.map((item, index) => (
-                                    <div key={index}>
-                                        {item.type === 'command' ? (
-                                            <div className="command-line">
-                                                <span className="prompt">{item.prompt || '$'}</span>
-                                                <span className={`command-text ${COLORS.COMMAND}`}>{item.text}</span>
-                                            </div>
-                                        ) : item.type === 'installation' ? (
-                                            <div className="output-line">
-                                                <span className="terminal-success">{item.action} </span>
-                                                <span>{item.packageName}</span>
-                                            </div>
-                                        ) : (
-                                            <div className={`output-line ${item.className}`}>
-                                                {item.text}
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-
-
-                                {!isProcessRunning && (
-                                    <div className="command-line">
-                                        <span className="prompt">$</span>
-                                        <div className="input-line">
-                                            <span className={COLORS.COMMAND}>
-                                                {buffer.substring(0, cursorPos)}
-                                            </span>
-
-                                            <span
-                                                className={`cursor ${terminalId === activeTerminal ? 'active' : ''} ${COLORS.COMMAND}`}
-                                            >
-                                                {cursorPos < buffer.length ? buffer.charAt(cursorPos) : ' '}
-                                            </span>
-
-                                            <span className={COLORS.COMMAND}>
-                                                {buffer.substring(cursorPos + 1)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
+            </TerminalContent>
+        </StyledTerminalContainer>
     );
 };
 
-export default RealTerminalComponent;
+export default EnhancedTerminal;
+
+
+const StyledTerminalContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+    background-color: ${colors.background};
+    color: ${colors.textPrimary};
+    border-radius: 6px;
+`;
+
+const FileTabs = styled.div`
+    display: flex;
+    background-color: ${colors.panelBackground};
+    padding: 0;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    align-items: center;
+    border-bottom: 1px solid ${colors.panelBorder};
+
+    &::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background-color: ${colors.scrollbarThumb};
+        border-radius: 4px;
+    }
+`;
+
+const StaticFolderContainer = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: ${colors.panelBackground};
+    color: ${colors.textSecondary};
+    border-right: 1px solid ${colors.panelBorder};
+    width: 40px;
+    height: 40px;
+`;
+
+const FileIconWrapper = styled.span`
+    display: inline-flex;
+    margin-right: 8px;
+    opacity: 0.8;
+`;
+
+const FileTab = styled.div`
+    padding: 12px 18px;
+    background-color: ${(props) => (props.active ? colors.activeTabBackground : "transparent")};
+    color: ${(props) => (props.active ? colors.textPrimary : colors.textSecondary)};
+    border-bottom: 3px solid ${(props) => (props.active ? colors.activeTabBorder : "transparent")};
+    cursor: pointer;
+    font-size: 16px;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    transition: background-color 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    user-select: none;
+    white-space: nowrap;
+
+    &:hover {
+        background-color: ${(props) => (props.active ? colors.activeTabBackground : colors.hover)};
+        color: ${colors.textPrimary};
+    }
+`;
+
+const TerminalContent = styled.div`
+    flex: 1;
+    width: 100%;
+    background-color: ${colors.background};
+    overflow: hidden;
+    position: relative;
+`;
+
+const ConnectingIndicator = styled.div`
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #6c757d;
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid ${colors.panelBorder};
+`;
+
+const LoadingDots = styled.div`
+  display: flex;
+  align-items: center;
+  margin-right: 6px;
+  
+  span {
+    width: 4px;
+    height: 4px;
+    margin: 0 2px;
+    background-color: #6c757d;
+    border-radius: 50%;
+    animation: loadingDots 1.4s infinite ease-in-out both;
+    
+    &:nth-child(1) {
+      animation-delay: -0.32s;
+    }
+    
+    &:nth-child(2) {
+      animation-delay: -0.16s;
+    }
+  }
+  
+  @keyframes loadingDots {
+    0%, 80%, 100% {
+      transform: scale(0);
+    }
+    40% {
+      transform: scale(1);
+    }
+  }
+`;
+
+const TerminalLoader = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(5, 10, 24, 0.7);
+  z-index: 10;
+`;
+
+const LoadingSpinner = styled.div`
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 69, 0, 0.2);
+  border-top: 3px solid ${colors.primary};
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 12px;
+  
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+`;
+
+const LoadingText = styled.div`
+  color: ${colors.textPrimary};
+  font-size: 14px;
+  font-weight: 500;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+`;

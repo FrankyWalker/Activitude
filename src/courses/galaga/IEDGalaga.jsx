@@ -103,7 +103,6 @@ const IEDGalaga = () => {
             });
     };
 
-    // Add the missing function definition here:
     const findLastCompletedTaskIndex = (tasks) => {
         for (let i = tasks.length - 1; i >= 0; i--) {
             if (tasks[i].completed) {
